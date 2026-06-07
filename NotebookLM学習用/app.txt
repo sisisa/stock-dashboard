@@ -1,0 +1,963 @@
+================================================
+FILE: src/app/actions.ts
+================================================
+"use server";
+
+import { addIdea as dbAddIdea, toggleIdeaUsed as dbToggleIdeaUsed, getIdeas } from '@/lib/data';
+import { revalidatePath } from 'next/cache';
+import fs from 'fs';
+import path from 'path';
+
+export async function addInsightAction(formData: FormData) {
+  const title = formData.get('title') as string;
+  const detail = formData.get('detail') as string;
+  const insight = formData.get('insight') as string;
+  const category = formData.get('category') as string || "未分類";
+
+  if (!title || !title.trim() || !insight || !insight.trim()) return;
+
+  const promptData = JSON.stringify({ detail: detail.trim(), insight: insight.trim() });
+
+  await dbAddIdea(title, promptData, category);
+  revalidatePath('/');
+}
+
+export async function toggleIdeaAction(id: number) {
+  await dbToggleIdeaUsed(id);
+  revalidatePath('/');
+}
+
+export async function updateIdeaAction(id: number, title: string, detail: string, insight: string, category: string, url: string, draftUrl: string) {
+  const gasUrl = process.env.NEXT_PUBLIC_GAS_WEB_APP_URL;
+  if (!gasUrl) return;
+
+  const prompt = JSON.stringify({ detail, insight });
+
+  try {
+    const res = await fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update_idea", id, title, prompt, category, url, draftUrl }),
+      cache: 'no-store'
+    });
+    const json = await res.json();
+    if (!json.success) {
+      console.error('GAS POST (update) Error:', json.error);
+    }
+  } catch (err) {
+    console.error('Error updating idea in GAS:', err);
+  }
+  revalidatePath('/');
+}
+
+// 記事自動生成 & Google Docs連携用アクション
+export async function generateAndDraftArticleAction(ideaId: number) {
+  const ideas = await getIdeas();
+  const idea = ideas.find(i => i.id === ideaId);
+  if (!idea) return { success: false, message: "Idea not found" };
+
+  try {
+    // 命令プロンプトを読み込む
+    const instructionsPath = path.join(process.cwd(), '.agent/instructions.md');
+    let systemPrompt = "あなたはプロのライターです。";
+    if (fs.existsSync(instructionsPath)) {
+      systemPrompt = await fs.promises.readFile(instructionsPath, 'utf8');
+    }
+
+    // 環境変数からAPIキーを取得
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const gasUrl = process.env.NEXT_PUBLIC_GAS_WEB_APP_URL;
+
+    let articleContent = `(AIによる生成が失敗または未設定です。設定を追加して実行してください)\n\nテーマ: ${idea.title}\nプロンプト: ${idea.prompt}`;
+
+    // 2. LLMで記事を生成 (Gemini APIを想定)
+    if (geminiKey) {
+      let detail = "";
+      let insight = "";
+      try {
+        const parsed = JSON.parse(idea.prompt);
+        detail = parsed.detail || "";
+        insight = parsed.insight || "";
+      } catch {
+        insight = idea.prompt || "";
+      }
+
+      // ポートフォリオ用に汎用的なプロンプトに変更しています。
+      // 実際には、別ファイルの指示書（instructions.md等）や環境変数から読み込む設計にするとさらに柔軟になります。
+      const promptText = `        
+        # Input Data
+        - 【カテゴリ】: ${idea.category || "未分類"}
+        - 【テーマ】: ${idea.title}
+        - 【詳細・背景】: ${detail || "特になし"}
+        - 【気付き・考察事項】: ${insight}
+
+        【役割】
+          あなたはプロのnoteライターです。
+          読者の思考を整理するような、
+          静かで論理的な記事を書くことを目的とします。
+
+          【書き手の人物設定】
+          あなたは次の人物の文章を代筆します。
+          ・20代
+
+          ・Webエンジニア経験あり
+
+          ・現在は新しい企業に所属しながらAI活用を研究
+
+          ・AIを「思考を拡張する外付けの脳」として使っている
+
+          【特徴】
+          ・静かで論理的
+          ・精神論や過度な励ましを好まない
+
+          ・迷いや試行錯誤を隠さない
+
+          文章スタンス
+
+          AIを使うこと自体が目的ではない。
+
+          「考えるためにAIを使う」
+
+          という視点を重視する。
+
+          【記事の対象読者】
+          次のような読者に向けて書く。
+          ・20代エンジニア
+
+          ・AIを使いたいが使いこなせていない人
+
+          ・思考整理や学習効率に悩んでいる人
+
+          【文体ルール】
+          ・一人称は「私」
+          ・ですます調
+
+          ・静かで論理的なトーン
+
+          以下を文章に自然に含める
+
+          ・迷い
+
+          ・気づき
+
+          ・小さな発見
+
+          重要
+
+          読者に対して断定的な教え方は避ける。
+
+          「私はこう考えている」
+
+          という形で語る。
+
+          【文体とスタンスの固定】
+          ・「私」の視点を維持する：教訓を垂れるのではなく、「私はこう考えた、こう感じた」という内省のログであることを強調してください。
+          ・「静かな論理」の徹底：熱血な励ましや、安易なポジティブ変換は不要です。淡々と構造を解剖するトーンを維持してください。
+
+          ・エンジニア用語のオン・オフ：技術記事でない場合は、「デバッグ」「バグ」「ループ」などの不必要な比喩は避け、その記事に適した用語を平易に使ってください。
+
+          2. 文章構造の厳守
+
+          ・「句点後の2行改行」の事前指定：noteのUIに合わせ、改行ルールを最初に叩き込んでください。
+
+          3. 概念の取り扱いルール
+
+          ・重複の禁止：似た概念が出てきた場合、それらを並列にするのではなく、「一方はもう一方の〇〇である」という論理的な接続、または統合を求めてください。
+
+          ・事実ベースの記述：調査内容を反映する際は、箇条書きやステップ（1→2→3）を用いて、因果関係を明確に記述させてください。
+
+          【読みやすさのルール】
+          ・句点（。）の後は必ず改行
+          ・スマホで読みやすい段落構成にする
+
+          Googleドキュメント / note貼り付け対策
+
+          ・句点の後は2回改行
+
+          ・見出しの前後は1行空ける
+
+          【見出しルール】
+          H2
+          記事の大きな区切り（3〜5個）
+          H3
+          具体例や手順
+
+          条件
+          ・誇張しない
+          ・静かなタイトル
+          ・SEOを意識
+
+          【Googleドキュメント改善ルール】
+
+          下書きを受け取った場合
+
+          まず文章の意図を分析する。
+
+          次の3点を整理する。
+
+          ・文章の主張
+
+          ・読者の悩み
+
+          ・書き手の核心メッセージ
+
+          その後
+
+          「意図確認メモ」
+
+          を作成する。
+
+          例
+
+          この文章は
+
+          AIを思考整理ツールとして使う価値
+
+          を伝える記事だと理解しました。
+
+          主張
+
+          AIは検索ツールではなく思考ツール
+
+          読者の悩み
+
+          AIを使っても思考が深まらない
+
+          核心
+
+          AIとの対話で思考を整理する方法
+
+          もしズレていれば修正してください。
+
+          確認後
+
+          改善を行う。
+
+          改善の優先順位
+
+          1 構造
+
+          2 読みやすさ
+
+          3 説得力
+
+          4 具体性
+
+          元の主張は絶対に変更しない。
+
+          【ファクトチェック】
+
+          次を確認する
+
+          ・AIツール名
+
+          ・機能
+
+          ・存在しない機能
+
+          不確実な場合は
+
+          「検証中」
+
+          と記載する。
+
+          【出力形式】
+
+          【生成タイトル】
+
+          【画像用短縮タイトル】
+
+          15文字以内
+
+          【タグ】
+
+          SEOタグ5個（#付き）
+
+          【本文】
+
+          【検証事項】
+
+          記事の精度を高めるために必要な追加情報
+
+          【SNS案】
+
+          X（100文字）
+
+          Threads（150文字）
+      `;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{
+            parts: [{
+              text: promptText
+            }]
+          }]
+        })
+      });
+      const aiData = await response.json();
+      if (aiData.candidates && aiData.candidates.length > 0 && aiData.candidates[0].content?.parts?.length > 0) {
+        articleContent = aiData.candidates[0].content.parts[0].text;
+      } else {
+        console.error("Gemini API Error Response:", aiData);
+        articleContent = `※AI記事の生成に失敗しました。\n\nGemini API Response: ${JSON.stringify(aiData)}\n\n---\nアイデア: ${idea.title}`;
+      }
+    }
+
+    // 3. GAS経由でGoogle Docsに保存
+    if (!gasUrl) {
+      return { success: false, message: "GAS_WEB_APP_URLが設定されていません。記事は生成されましたが保存されませんでした。" };
+    }
+
+    const gasRes = await fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create_doc",
+        id: idea.id, // GAS側でdraftUrlもスプレッドシートに保存させるためIDを渡す
+        title: idea.title,
+        content: articleContent
+      }),
+      // Next.jsキャッシュ無効化
+      cache: 'no-store'
+    });
+
+    const gasText = await gasRes.text();
+    let gasData;
+    try {
+      gasData = JSON.parse(gasText);
+    } catch {
+      console.error("GAS Error Response HTML:", gasText.substring(0, 500));
+      return {
+        success: false,
+        message: "GASからHTMLが返されました。GASのデプロイ設定で「アクセスできるユーザー」が「全員」になっていないか、またはURLが誤っている可能性があります。再デプロイして確認してください。"
+      };
+    }
+
+    // 生成・更新成功時にキャッシュを破棄し、画面に反映させる
+    revalidatePath('/');
+
+    return { success: true, url: gasData.url };
+
+  } catch (error) {
+    console.error(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, message: errorMessage };
+  }
+}
+
+
+
+================================================
+FILE: src/app/globals.css
+================================================
+@import "tailwindcss";
+
+b {
+  font-weight: bold;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+:root {
+  --background: #0a0a0b;
+  --foreground: #ededed;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for better aesthetic */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+
+
+================================================
+FILE: src/app/IdeaList.tsx
+================================================
+"use client";
+
+import { useState, useTransition } from "react";
+import { toggleIdeaAction, generateAndDraftArticleAction, updateIdeaAction } from "./actions";
+import { Idea } from "@/lib/data";
+
+function IdeaItem({ idea }: { idea: Idea }) {
+  // Parsing prompt
+  let parsedDetail = "";
+  let parsedInsight = "";
+  try {
+    const parsed = JSON.parse(idea.prompt);
+    parsedDetail = parsed.detail || "";
+    parsedInsight = parsed.insight || "";
+  } catch {
+    // 過去の一次元データ互換用
+    parsedInsight = idea.prompt || "";
+  }
+
+  const [isPending, startTransition] = useTransition();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(idea.title);
+  const [editDetail, setEditDetail] = useState(parsedDetail);
+  const [editInsight, setEditInsight] = useState(parsedInsight);
+  const [editCategory, setEditCategory] = useState(idea.category || "その他");
+  const [editUrl, setEditUrl] = useState(idea.url || "");
+  const [editDraftUrl, setEditDraftUrl] = useState(idea.draftUrl || "");
+
+  const handleGenerate = () => {
+    if (!window.confirm("AIによる自動執筆を開始し、Google Docsを下書き作成しますか？(APIキー等が設定されている必要があります)")) return;
+    
+    startTransition(async () => {
+      const res = await generateAndDraftArticleAction(idea.id);
+      if (res?.success && res.url) {
+        window.open(res.url, "_blank");
+      } else {
+        alert("エラー: " + (res?.message || "不明なエラー"));
+      }
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    startTransition(async () => {
+      await updateIdeaAction(idea.id, editTitle, editDetail, editInsight, editCategory, editUrl, editDraftUrl);
+      setIsEditing(false);
+    });
+  };
+  
+  const updatedDate = new Date(idea.updatedAt || idea.createdAt).toLocaleString('ja-JP', { 
+    month: 'numeric', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+
+  if (isEditing) {
+    return (
+      <div className="p-4 rounded-xl border border-blue-500/50 bg-white/10 flex flex-col gap-3">
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            value={editTitle} 
+            onChange={e => setEditTitle(e.target.value)} 
+            placeholder="【必須】テーマ"
+            className="flex-1 px-3 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+          />
+          <select
+            value={editCategory}
+            onChange={e => setEditCategory(e.target.value)}
+            className="w-32 px-2 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-white appearance-none cursor-pointer"
+          >
+            <option value="AI系">AI系</option>
+            <option value="日常系">日常系</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <textarea 
+          value={editDetail} 
+          onChange={e => setEditDetail(e.target.value)} 
+          placeholder="【任意】詳細（背景、状況など）"
+          rows={2}
+          className="w-full px-3 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm custom-scrollbar"
+        />
+        <textarea 
+          value={editInsight} 
+          onChange={e => setEditInsight(e.target.value)} 
+          placeholder="【必須】気付き（教訓、考察事項）"
+          rows={3}
+          className="w-full px-3 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm custom-scrollbar"
+        />
+        <input 
+          type="text" 
+          value={editDraftUrl} 
+          onChange={e => setEditDraftUrl(e.target.value)} 
+          placeholder="下書き用Docs URL（自動設定）"
+          className="w-full px-3 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+        />
+        <input 
+          type="text" 
+          value={editUrl} 
+          onChange={e => setEditUrl(e.target.value)} 
+          placeholder="投稿完了後のnote記事URL（任意）"
+          className="w-full px-3 py-2 bg-black/40 border border-white/20 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+        />
+        <div className="flex gap-2 justify-end mt-2">
+          <button 
+            onClick={() => setIsEditing(false)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:bg-white/10"
+          >
+            キャンセル
+          </button>
+          <button 
+            onClick={handleSaveEdit}
+            disabled={isPending}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isPending ? "保存中..." : "保存"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`p-4 rounded-xl border transition-all duration-200 group relative ${
+        idea.isUsed 
+          ? "bg-white/5 border-white/5 opacity-60" 
+          : "bg-white/10 border-white/10 hover:border-blue-500/30 hover:bg-white/15"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-white/40">
+              更新: {updatedDate}
+            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border border-white/10 ${
+              idea.category === 'AI系' ? 'bg-blue-500/20 text-blue-300' : 
+              idea.category === '日常系' ? 'bg-emerald-500/20 text-emerald-300' : 
+              'bg-white/5 text-white/50'
+            }`}>
+              {idea.category || '未分類'}
+            </span>
+          </div>
+          <p className={`text-sm md:text-base mb-2 sm:mb-0 ${idea.isUsed ? "line-through text-white/50" : "text-white/90"}`}>
+            {idea.title}
+          </p>
+          <div className="flex flex-col gap-1 mt-2">
+            {parsedDetail && (
+               <p className="text-xs text-white/40 line-clamp-2">詳細: {parsedDetail}</p>
+            )}
+            {parsedInsight && (
+               <p className="text-xs text-white/60 line-clamp-3">気付き: {parsedInsight}</p>
+            )}
+          </div>
+        </div>
+        
+        <div className="shrink-0 flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 custom-scrollbar mt-2 sm:mt-0">
+          {!idea.isUsed && (
+            <button
+              onClick={handleGenerate}
+              disabled={isPending}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/40 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isPending ? "執筆中..." : "AI執筆 & Docs作成"}
+            </button>
+          )}
+          
+          <button
+            onClick={() => toggleIdeaAction(idea.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+              idea.isUsed 
+                ? "bg-white/10 text-white/60 hover:bg-white/20" 
+                : "bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30"
+            }`}
+          >
+            {idea.isUsed ? "戻す" : "使った！"}
+          </button>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex gap-4">
+          {idea.draftUrl && (
+            <a href={idea.draftUrl} target="_blank" rel="noreferrer" className="text-purple-400 text-xs inline-block hover:underline">
+              下書きを確認 &rarr;
+            </a>
+          )}
+          {idea.url && (
+            <a href={idea.url} target="_blank" rel="noreferrer" className="text-blue-400 text-xs inline-block hover:underline">
+              記事を見る &rarr;
+            </a>
+          )}
+        </div>
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="text-white/40 hover:text-white transition-colors p-1"
+          title="編集"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function IdeaList({ initialIdeas }: { initialIdeas: Idea[] }) {
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<"unused" | "used">("unused");
+  const [categoryFilter, setCategoryFilter] = useState("すべて");
+
+  const filtered = initialIdeas.filter(idea => {
+    if (filterType === "unused" && idea.isUsed) return false;
+    if (filterType === "used" && !idea.isUsed) return false;
+    if (categoryFilter !== "すべて" && idea.category !== categoryFilter) return false;
+    if (search && !idea.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }).sort((a, b) => {
+    const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+    const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+    return dateB - dateA;
+  });
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="mb-4 flex flex-col gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="アイデアを検索..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-white/50"
+          />
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm text-white appearance-none cursor-pointer"
+          >
+            <option value="すべて" className="bg-slate-800">すべてのカテゴリ</option>
+            <option value="AI系" className="bg-slate-800">AI系</option>
+            <option value="日常系" className="bg-slate-800">日常系</option>
+            <option value="その他" className="bg-slate-800">その他</option>
+          </select>
+        </div>
+        
+        <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 self-start">
+          <button
+            onClick={() => setFilterType("unused")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${filterType === "unused" ? "bg-white/10 text-white shadow-sm" : "text-white/50 hover:text-white/80"}`}
+          >
+            未使用
+          </button>
+          <button
+            onClick={() => setFilterType("used")}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${filterType === "used" ? "bg-white/10 text-white shadow-sm" : "text-white/50 hover:text-white/80"}`}
+          >
+            使用済み
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar min-h-0">
+        {filtered.length === 0 ? (
+          <p className="text-white/40 text-center py-8">アイデアが見つかりません</p>
+        ) : (
+          filtered.map(idea => <IdeaItem key={idea.id} idea={idea} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
+================================================
+FILE: src/app/InsightForm.tsx
+================================================
+"use client";
+
+import { useTransition, useRef } from "react";
+import { addInsightAction } from "./actions";
+
+export default function InsightForm() {
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+      await addInsightAction(formData);
+      formRef.current?.reset();
+    });
+  };
+
+  return (
+    <form ref={formRef} action={handleSubmit} className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          type="text"
+          name="title"
+          placeholder="【必須】テーマ（何について考えたか）"
+          required
+          className="flex-1 rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+        />
+        <select
+          name="category"
+          className="w-full sm:w-40 rounded-xl bg-white/10 border border-white/10 p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none cursor-pointer"
+        >
+          <option value="AI系" className="bg-slate-800">AI系</option>
+          <option value="日常系" className="bg-slate-800">日常系</option>
+          <option value="その他" className="bg-slate-800">その他</option>
+        </select>
+      </div>
+      <textarea
+        name="detail"
+        placeholder="【任意】詳細（具体的な状況、背景、感情など）"
+        rows={2}
+        className="w-full resize-none rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all custom-scrollbar"
+      />
+      <textarea
+        name="insight"
+        placeholder="【必須】気付き"
+        rows={3}
+        required
+        className="w-full resize-none rounded-xl bg-white/5 border border-white/10 p-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all custom-scrollbar"
+      />
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-purple-500/30 disabled:opacity-70 disabled:hover:scale-100"
+        >
+          {isPending ? "追加中..." : "+ アイデアに追加"}
+          <svg
+            className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isPending ? "hidden" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+
+
+================================================
+FILE: src/app/layout.tsx
+================================================
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "ストック ダッシュボード",
+  description: "ストック ダッシュボード",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
+}
+
+
+
+================================================
+FILE: src/app/page.tsx
+================================================
+import { getIdeas } from "@/lib/data";
+import IdeaList from "./IdeaList";
+import InsightForm from "./InsightForm";
+
+export default async function Home() {
+  // サーバーコンポーネント: 初期表示時にデータを取得し、SSG/SSRでレンダリング
+  // ※ポートフォリオ用に、実際のバックエンドやDBの代わりにローカルJSONまたは外部APIからアイデアを取得する想定の構成です
+  const ideas = await getIdeas();
+
+  const canvaTemplates = [
+    {
+      id: "パターン1",
+      type: "シンプル×テキスト強調型",
+      genre: "ビジネス、技術解説、お金系",
+      url: process.env.NEXT_PUBLIC_CANVA_PATTERN1_URL || "#"
+    },
+    {
+      id: "パターン2",
+      type: "写真×オーバーレイ型",
+      genre: "健康、ダイエット、人間関係",
+      url: process.env.NEXT_PUBLIC_CANVA_PATTERN2_URL || "#"
+    },
+    {
+      id: "パターン3",
+      type: "イラスト×ポップ型",
+      genre: "副業、ライフハック、初心者向け",
+      url: process.env.NEXT_PUBLIC_CANVA_PATTERN3_URL || "#"
+    },
+    {
+      id: "パターン4",
+      type: "グラデーション×モダン型",
+      genre: "トレンド、最新AI、全般",
+      url: process.env.NEXT_PUBLIC_CANVA_PATTERN4_URL || "#"
+    },
+    {
+      id: "パターン5",
+      type: "枠線×フォーマル型",
+      genre: "投資、専門的な解説、硬めの内容",
+      url: process.env.NEXT_PUBLIC_CANVA_PATTERN5_URL || "#"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0B] text-slate-200 selection:bg-purple-500/30 font-sans">
+      {/* Dynamic Background Pattern */}
+      <div className="fixed inset-0 z-0 opacity-20 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, #3b0764 0%, transparent 50%)' }} />
+
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 flex flex-col gap-8 h-screen">
+
+        {/* Header / Hero */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+              ストック ダッシュボード
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <a href="https://docs.google.com/spreadsheets/d/1Ez3gzKsTRoXE01tCoN0ZGyamCTnXCExsXGJ46VSKUxk/edit?gid=0#gid=0" target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span> note記事データ格納用スプレッドシート
+            </a>
+
+            <a href="https://notebooklm.google.com/" target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-blue-400"></span> NotebookLM
+            </a>
+            <a href="https://www.perplexity.ai/" target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-cyan-400"></span> Perplexity
+            </a>
+            <a href="https://note.com/" target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-white"></span> note
+            </a>
+          </div>
+        </header>
+
+        {/* Two Column Layout container spanning remaining vertical space */}
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-8 min-h-0">
+
+          {/* Left Column: Quick Entry & Templates */}
+          <div className="lg:col-span-5 flex flex-col gap-6 lg:h-full lg:overflow-y-auto order-1 lg:order-1 custom-scrollbar">
+            <section className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-3xl shrink-0">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                新しいアイデア・気づきを登録
+              </h2>
+              <p className="text-xs text-white/50 mb-4">ここで入力した内容は右側の「アイデアストック」に新しいアイデアとして追加されます。</p>
+              <InsightForm />
+            </section>
+
+            {/* Template Links Section */}
+            <section className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-3xl shrink-0">
+              <details className="group">
+                <summary className="flex items-center justify-between cursor-pointer list-none appearance-none font-bold text-lg">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    記事用画像テンプレート (Canva)
+                  </span>
+                  <span className="transition duration-300 group-open:rotate-180 text-white/50">
+                    <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                  </span>
+                </summary>
+                <div className="mt-4 flex flex-col gap-3">
+                  {canvaTemplates.map((template, idx) => (
+                    <a key={idx} href={template.url} target="_blank" rel="noreferrer"
+                      className="block p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all font-medium">
+                      <div className="flex justify-between items-start mb-1 gap-2">
+                        <span className="text-white font-bold whitespace-nowrap">{template.id}</span>
+                        <span className="text-[10px] text-pink-300 bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/30 text-right">
+                          {template.type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/50">{template.genre}</p>
+                    </a>
+                  ))}
+                </div>
+              </details>
+            </section>
+          </div>
+
+          {/* Right Column: Ideas */}
+          <div className="lg:col-span-7 h-full flex flex-col min-h-0 order-1 lg:order-2">
+            <section className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-3xl flex-1 flex flex-col">
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                アイデアストック
+              </h2>
+              <div className="flex-1 min-h-0">
+                <IdeaList initialIdeas={ideas} />
+              </div>
+            </section>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
