@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Idea Stock Dashboard",
+  "version": "1.0.0",
+  "action": {},
+  "description": "対象となる概念を調査した後に自分の言葉で整理し、スプレッドシートに保存します。",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "clipboardRead"],
+  "commands": {
+    "toggle-dashboard": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+M"
+      },
+      "description": "ダッシュボードを開閉する"
+    }
+  }
+}
