@@ -10,7 +10,7 @@ interface CalendarProps {
 export function Calendar({ value, onChange }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(value || new Date());
 
-  // 【追加】外部（手入力）から value が指定・変更された場合、カレンダーの表示月をそれに追従させる
+  // 外部（手入力）から value が指定・変更された場合、カレンダーの表示月をそれに追従させる
   useEffect(() => {
     if (value && !isNaN(value.getTime())) {
       setCurrentMonth(value);

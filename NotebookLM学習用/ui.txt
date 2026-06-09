@@ -1,0 +1,305 @@
+================================================
+FILE: src/components/ui/calendar.tsx
+================================================
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface CalendarProps {
+  value?: Date;
+  onChange: (date: Date) => void;
+}
+
+export function Calendar({ value, onChange }: CalendarProps) {
+  const [currentMonth, setCurrentMonth] = useState(value || new Date());
+
+  // 外部（手入力）から value が指定・変更された場合、カレンダーの表示月をそれに追従させる
+  useEffect(() => {
+    if (value && !isNaN(value.getTime())) {
+      setCurrentMonth(value);
+    }
+  }, [value]);
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days: (Date | null)[] = [];
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(year, month, i));
+  }
+
+  const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
+
+  return (
+    <div className="w-64 rounded-xl border border-white/10 bg-[#1a1a1c] p-3 shadow-2xl">
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          onClick={handlePrevMonth}
+          className="rounded px-2 py-1 text-white/70 hover:bg-white/10 hover:text-white"
+        >
+          &lt;
+        </button>
+        <span className="text-sm font-bold text-white/90">
+          {year}年 {month + 1}月
+        </span>
+        <button
+          onClick={handleNextMonth}
+          className="rounded px-2 py-1 text-white/70 hover:bg-white/10 hover:text-white"
+        >
+          &gt;
+        </button>
+      </div>
+      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-xs text-white/50">
+        {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
+          <div key={d}>{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-sm">
+        {days.map((date, i) => (
+          <div
+            key={i}
+            className="flex aspect-square items-center justify-center"
+          >
+            {date ? (
+              <button
+                onClick={() => onChange(date)}
+                className={`flex h-full w-full items-center justify-center rounded hover:bg-blue-500/50 ${
+                  value && date.toDateString() === value.toDateString()
+                    ? "bg-blue-500 font-bold text-white"
+                    : "text-white/80"
+                }`}
+              >
+                {date.getDate()}
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+================================================
+FILE: src/components/ui/combobox.tsx
+================================================
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+
+interface ComboboxProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+}
+
+export function Combobox({
+  value,
+  onChange,
+  options,
+  placeholder = "選択または入力...",
+}: ComboboxProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 外側クリックでサジェストリストを閉じる処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+    setIsOpen(true);
+  };
+
+  const handleSelect = (option: string) => {
+    onChange(option);
+    setIsOpen(false);
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange("");
+    setIsOpen(false);
+  };
+
+  // 入力された文字で候補を動的に絞り込む（大文字・小文字を区別しない）
+  const filteredOptions = options.filter((opt) =>
+    opt.toLowerCase().includes(value.toLowerCase()),
+  );
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onClick={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full min-w-[160px] rounded border border-white/10 bg-[#121214] p-2 pr-8 text-sm text-white/90 focus:border-white/30 focus:outline-none"
+        />
+        {/* 値が入力されている場合のみ✕ボタンを表示 */}
+        {value && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-white/40 hover:text-white/80"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* 候補が存在し、かつ開いている場合のみリストを表示 */}
+      {isOpen && filteredOptions.length > 0 && (
+        <div className="custom-scrollbar absolute top-full left-0 z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-white/10 bg-[#1a1a1c] shadow-2xl">
+          {filteredOptions.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => handleSelect(opt)}
+              className="w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+================================================
+FILE: src/components/ui/date-picker.tsx
+================================================
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Calendar } from "./calendar";
+
+interface DatePickerProps {
+  value: string; // YYYY-MM-DD
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = "日付を選択",
+}: DatePickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  // タイピング中の文字列を保持するためのステート
+  const [inputValue, setInputValue] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 親から渡された value が変わった時に inputValue を同期する
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  // 外側クリックでカレンダーを閉じる処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const dateValue =
+    value && !isNaN(new Date(value).getTime()) ? new Date(value) : undefined;
+
+  // カレンダーのUIから日付をクリックされたときの処理
+  const handleSelect = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const formatted = `${year}-${month}-${day}`;
+    setInputValue(formatted);
+    onChange(formatted);
+    // 日付選択後はカレンダーを閉じる
+    setIsOpen(false);
+  };
+
+  // 手入力されたときの処理
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+
+    // YYYY-MM-DD や YYYY/MM/DD として有効な日付か簡易チェック
+    const parsedDate = new Date(val);
+    if (!isNaN(parsedDate.getTime()) && val.length >= 8) {
+      const year = parsedDate.getFullYear();
+      const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(parsedDate.getDate()).padStart(2, "0");
+      onChange(`${year}-${month}-${day}`);
+    } else if (val === "") {
+      onChange("");
+    }
+  };
+
+  // ✕ボタンが押されたときの処理
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation(); // ✕を押した際にカレンダーが開閉するのを防ぐ
+    setInputValue("");
+    onChange("");
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onClick={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full min-w-[130px] rounded border border-white/10 bg-[#121214] p-2 pr-8 text-sm text-white/90 focus:border-white/30 focus:outline-none"
+        />
+        {/* 値が入力されている場合のみ✕ボタンを表示 */}
+        {inputValue && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-white/40 hover:text-white/80"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 z-50 mt-1">
+          <Calendar value={dateValue} onChange={handleSelect} />
+        </div>
+      )}
+    </div>
+  );
+}
