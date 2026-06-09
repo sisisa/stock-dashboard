@@ -22,8 +22,60 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const json = await response.json();
+
     if (json.success && Array.isArray(json.data)) {
-      return json.data as StockIdea[];
+      return (
+        json.data
+          // 引数 item, index、および戻り値の型を明記し、暗黙の any (ts(7006)) を防止
+          .map((item: unknown, index: number): StockIdea | null => {
+            let row: unknown[] = [];
+
+            if (Array.isArray(item)) {
+              row = item;
+            } else if (
+              item !== null &&
+              typeof item === "object" &&
+              "id" in item &&
+              Array.isArray((item as Record<string, unknown>).id)
+            ) {
+              row = (item as Record<string, unknown>).id as unknown[];
+            } else {
+              return null; // 想定外のデータはスキップ
+            }
+
+            if (row.length === 0) return null;
+
+            // インデックス  で配列の1列目 (id) にアクセス
+            const rawId = row;
+
+            // typeof で string 型であることを確認してから比較し、型の重複エラー (ts(2367)) を回避
+            if (typeof rawId === "string" && rawId === "id") {
+              return null; // ヘッダー行を除外
+            }
+
+            const parsedId = typeof rawId === "number" ? rawId : Number(rawId);
+            const validId = Number.isNaN(parsedId)
+              ? Date.now() + index
+              : parsedId;
+
+            // スプレッドシートの列定義に従い、インデックス ([1], [2]...) を用いて各要素へアクセス
+            return {
+              id: validId,
+              details: String(row[1] || ""),
+              unknownWords: String(row[2] || "[]"),
+              relatedLinks: String(row[3] || "[]"),
+              ownWords: String(row[4] || ""),
+              metaphor: String(row[5] || ""),
+              categories: String(row[6] || "[]"),
+              isUsed: Boolean(row[7] || false),
+              draftUrl: String(row[8] || ""),
+              createdAt: String(row[9] || ""),
+              updatedAt: String(row[10] || ""),
+            };
+          })
+          // フィルタリング関数の引数と Type Guard の型を明記し、安全に null を除外
+          .filter((idea: StockIdea | null): idea is StockIdea => idea !== null)
+      );
     }
     return [];
   } catch (error) {
@@ -72,11 +124,27 @@ FILE: src/features/dashboard/components/idea-detail-modal.tsx
 ================================================
 "use client";
 
+import { useMemo } from "react";
 import { StockIdea } from "@/lib/gas-api";
 
 interface IdeaDetailModalProps {
   idea: StockIdea;
   onClose: () => void;
+}
+
+/**
+ * 外部から渡されるJSON文字列を安全にパースするためのヘルパー
+ * 理由: GAS等の外部データは型が完全に保証されないため、手動で不正な文字が入った際の
+ *       JSON.parse エラーによる画面（UI）全体のクラッシュを防ぐための防波堤として設置。
+ */
+function safeParse<T>(value: string, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.error("JSON parse error:", error);
+    return fallback;
+  }
 }
 
 export default function IdeaDetailModal({
@@ -90,48 +158,134 @@ export default function IdeaDetailModal({
     }
   };
 
+  // 毎回レンダリング時にパースし直さないようメモ化
+  // 理由: パース処理は比較的重いため、ideaの内容が変わらない限り再計算を避ける
+  const unknownWords = useMemo(
+    () => safeParse<{ word: string; result: string }[]>(idea.unknownWords, []),
+    [idea.unknownWords],
+  );
+  const relatedLinks = useMemo(
+    () =>
+      safeParse<{ memo: string; url: string; title: string }[]>(
+        idea.relatedLinks,
+        [],
+      ),
+    [idea.relatedLinks],
+  );
+  const categories = useMemo(
+    () => safeParse<string[]>(idea.categories, []),
+    [idea.categories],
+  );
+
   return (
     <div
       onClick={handleBackdropClick}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
     >
-      <div className="custom-scrollbar flex max-h-full w-full max-w-2xl flex-col gap-4 overflow-y-auto rounded-2xl border border-white/10 bg-[#121214] p-6 shadow-2xl">
+      {/* 
+        理由: ダイアログのサイズを大きくするため、max-w-2xl から max-w-4xl に変更。
+        また、高さを max-h-full とし、内部で overflow-y-auto を指定することで、
+        情報量が多くなっても画面からはみ出さずスクロールできるようにしている。
+      */}
+      <div className="custom-scrollbar flex max-h-full w-full max-w-4xl flex-col gap-6 overflow-y-auto rounded-2xl border border-white/10 bg-[#121214] p-6 shadow-2xl">
+        {/* ヘッダー部分 */}
         <div className="flex items-start justify-between border-b border-white/10 pb-4">
-          <h3 className="text-lg font-bold text-white/90">詳細情報の確認</h3>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-lg font-bold text-white/90">詳細情報の確認</h3>
+            {/* カテゴリ表示 */}
+            {categories.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat, i) => (
+                  <span
+                    key={i}
+                    className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                  >
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white hover:bg-white/10 hover:text-white"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-white/40">
-              詳細の記載
-            </span>
-            <p className="text-sm text-white/80">{idea.details || "未入力"}</p>
+        {/* コンテンツ部分 */}
+        <div className="flex flex-col gap-6 text-sm text-white/80">
+          {/* 詳細の記載 */}
+          <div className="flex flex-col gap-2">
+            <h4 className="font-semibold text-white">詳細の記載</h4>
+            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+              {idea.details || "未記載"}
+            </p>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-white/40">
-              自分の言葉で整理
-            </span>
-            <p className="text-sm text-white/80">{idea.ownWords || "未入力"}</p>
+          {/* わからない単語と調査結果 */}
+          <div className="flex flex-col gap-2">
+            <h4 className="font-semibold text-white">
+              わからない単語と調査した結果
+            </h4>
+            {unknownWords.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {unknownWords.map((item, index) => (
+                  <li key={index} className="rounded bg-white/5 p-3">
+                    <span className="font-bold text-white/90">{item.word}</span>
+                    <span className="mx-2 text-white/40">-</span>
+                    <span>{item.result}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-white/40">未記載</p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-white/40">たとえ</span>
-            <p className="text-sm text-white/80">{idea.metaphor || "未入力"}</p>
+          {/* 関連リンク */}
+          <div className="flex flex-col gap-2">
+            <h4 className="font-semibold text-white">関連リンク</h4>
+            {relatedLinks.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {relatedLinks.map((link, index) => (
+                  <li
+                    key={index}
+                    className="flex flex-col gap-1 rounded bg-white/5 p-3"
+                  >
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-blue-400 hover:underline"
+                    >
+                      {link.title || link.url}
+                    </a>
+                    {link.memo && (
+                      <p className="text-xs text-white">{link.memo}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-white/40">未記載</p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-white/40">
-              カテゴリ
-            </span>
-            <p className="text-sm text-white/80">
-              {idea.categories !== "[]" ? idea.categories : "未分類"}
+          {/* 自分の言葉で整理 */}
+          <div className="flex flex-col gap-2">
+            <h4 className="font-semibold text-white">自分の言葉で整理</h4>
+            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+              {idea.ownWords || "未記載"}
+            </p>
+          </div>
+
+          {/* たとえを考える */}
+          <div className="flex flex-col gap-2">
+            <h4 className="font-semibold text-white">たとえ</h4>
+            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+              {idea.metaphor || "未記載"}
             </p>
           </div>
         </div>
@@ -483,86 +637,123 @@ FILE: src/features/dashboard/components/search-panel.tsx
 ================================================
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+// ※パスは既存の構成に沿っています
 import { StockIdea } from "@/lib/gas-api";
+import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
+
+/**
+ * JSON文字列を安全にパースするためのヘルパー関数
+ * 理由: GASから渡されるデータ（idea.categories）はJSON形式の文字列であるため、
+ * そのまま表示すると ["単語の違い"] のようにブラケットやダブルクォーテーションごと表示されてしまう。
+ * また、不正な文字が入っていた際の parse エラーによるクラッシュを防ぐ。
+ */
+function safeParse<T>(value: string, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.error("JSON parse error:", error);
+    return fallback;
+  }
+}
 
 export default function SearchPanel() {
   const [selectedIdea, setSelectedIdea] = useState<StockIdea | null>(null);
+  const [ideas, setIdeas] = useState<StockIdea[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // ※今回はUI確認のためのモックデータ配列を定義しています。
-  // 実運用時は useEffect や useSWR等 で getStockIdeas() を呼び出してセットします。
-  const mockIdeas: StockIdea[] = [
-    {
-      id: 1,
-      details:
-        "Next.jsとChrome拡張の連携におけるアーキテクチャの気づき。Backgroundスクリプトとストレージのやり取りが肝になる。",
-      unknownWords: "[]",
-      relatedLinks: "[]",
-      ownWords:
-        "つまり、Next.jsはUI描画に徹し、拡張のAPIは外から注入するイメージ。",
-      metaphor: "レストランの厨房（Next.js）とウェイター（Chrome拡張）の関係。",
-      categories: '["技術メモ", "Next.js"]',
-      isUsed: false,
-      draftUrl: "",
-      createdAt: "2026-06-08T10:00:00Z",
-      updatedAt: "2026-06-08T10:00:00Z",
-    },
-    {
-      id: 2,
-      details:
-        "日常で感じた、タスク管理ツールの「入力の重さ」について。思いついた瞬間に書けないと意味がない。",
-      unknownWords: "[]",
-      relatedLinks: "[]",
-      ownWords: "UIは限りなく透明に、すぐ書けることが正義。",
-      metaphor: "すぐ出せるポケットサイズのメモ帳の重要性。",
-      categories: '["日常系", "UI/UX"]',
-      isUsed: false,
-      draftUrl: "",
-      createdAt: "2026-06-07T15:30:00Z",
-      updatedAt: "2026-06-07T15:30:00Z",
-    },
-  ];
+  useEffect(() => {
+    const loadIdeas = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const fetchedIdeas = await fetchStockIdeas();
+        setIdeas(fetchedIdeas);
+      } catch (err) {
+        console.error("Error fetching ideas:", err);
+        setError("データの取得に失敗しました。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadIdeas();
+  }, []);
 
   return (
     <div className="relative flex h-full flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
       <h2 className="text-xl font-bold">確認・検索</h2>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <input
           type="text"
           placeholder="キーワード検索..."
-          className="flex-1 rounded-lg border border-white bg-black/40 p-2 text-sm focus:border-blue-500 focus:outline-none"
-        />
-        <input
-          type="date"
-          className="rounded-lg border border-white bg-black/40 p-2 text-sm text-white/80 focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-white/10 bg-[#121214] p-2 text-white/90"
         />
       </div>
 
-      <div className="custom-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto">
-        {mockIdeas.map((idea) => (
-          <div
-            key={idea.id}
-            onClick={() => setSelectedIdea(idea)}
-            className="flex cursor-pointer flex-col rounded-lg border border-white/10 bg-white/5 p-4 transition-colors hover:border-blue-500/50 hover:bg-white/10"
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-300">
-                {idea.categories !== "[]" ? "カテゴリあり" : "未分類"}
-              </span>
-              <span className="text-xs text-white/40">
-                {new Date(idea.updatedAt).toLocaleDateString()}
-              </span>
-            </div>
-            <p className="line-clamp-2 text-sm font-medium text-white/90">
-              {idea.details}
-            </p>
-          </div>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex h-full items-center justify-center p-5">
+          <p className="text-white/50">読み込み中...</p>
+        </div>
+      ) : error ? (
+        <div className="flex h-full items-center justify-center p-5">
+          <p className="text-red-500">{error}</p>
+        </div>
+      ) : ideas.length === 0 ? (
+        <div className="flex h-full items-center justify-center p-5">
+          <p className="text-white/50">登録されたアイデアがありません。</p>
+        </div>
+      ) : (
+        <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto">
+          {ideas.map((idea) => {
+            // リスト描画時に、安全にカテゴリの文字列を配列へ復元する
+            const categories = safeParse<string[]>(idea.categories, []);
 
-      {/* モーダルの呼び出し */}
+            return (
+              <div
+                key={idea.id}
+                onClick={() => setSelectedIdea(idea)}
+                className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10"
+              >
+                <div className="flex items-center justify-between">
+                  {/* カテゴリのタグ表示 */}
+                  <div className="flex flex-wrap gap-2">
+                    {categories.length > 0 ? (
+                      categories.map((cat, i) => (
+                        <span
+                          key={i}
+                          className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                        >
+                          {cat}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="rounded bg-white/10 px-2 py-1 text-xs font-semibold text-white/40">
+                        未分類
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-white/50">
+                    {new Date(idea.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="mt-2 line-clamp-2 text-sm text-white/80">
+                  詳細：{idea.details || "詳細なし"}
+                </p>
+
+                <p className="mt-2 line-clamp-2 text-sm text-white/80">
+                  自分の言葉：{idea.ownWords || "詳細なし"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {selectedIdea && (
         <IdeaDetailModal
           idea={selectedIdea}
@@ -842,3 +1033,5 @@ export interface RelatedLink {
   url: string;
   title: string;
 }
+
+

@@ -100,10 +100,10 @@ export default function IdeaDetailModal({
             </p>
           </div>
 
-          {/* わからない単語と調査結果 */}
+          {/* 明確にわからない単語と調査結果 */}
           <div className="flex flex-col gap-2">
             <h4 className="font-semibold text-white">
-              わからない単語と調査した結果
+              明確にわからない単語と調査した結果
             </h4>
             {unknownWords.length > 0 ? (
               <ul className="flex flex-col gap-2">
