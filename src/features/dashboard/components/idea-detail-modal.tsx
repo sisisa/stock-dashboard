@@ -109,8 +109,8 @@ export default function IdeaDetailModal({
               <ul className="flex flex-col gap-2">
                 {unknownWords.map((item, index) => (
                   <li key={index} className="rounded bg-white/5 p-3">
-                    <span className="font-bold text-white/90">{item.word}</span>
-                    <span className="mx-2 text-white/40">-</span>
+                    <span className="font-bold text-white">{item.word}</span>
+                    <span className="mx-2 text-white">：</span>
                     <span>{item.result}</span>
                   </li>
                 ))}

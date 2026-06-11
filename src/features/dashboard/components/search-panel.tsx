@@ -6,6 +6,15 @@ import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
+
+import { Button } from "@/components/ui/button";
+
+type ParsedStockIdea = StockIdea & {
+  parsedCategories: string[];
+  parsedUnknownWords: { word: string; result: string }[];
+  parsedRelatedLinks: { memo: string; url: string; title: string }[];
+};
+
 /**
  * JSON文字列を安全にパースするためのヘルパー関数
  */
@@ -20,8 +29,11 @@ function safeParse<T>(value: string, fallback: T): T {
 }
 
 export default function SearchPanel() {
-  const [selectedIdea, setSelectedIdea] = useState<StockIdea | null>(null);
-  const [ideas, setIdeas] = useState<StockIdea[]>([]);
+  const [selectedIdea, setSelectedIdea] = useState<ParsedStockIdea | null>(
+    null,
+  );
+  const [ideas, setIdeas] = useState<ParsedStockIdea[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,13 +43,25 @@ export default function SearchPanel() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // データの呼び出し
   useEffect(() => {
     const loadIdeas = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const fetchedIdeas = await fetchStockIdeas();
-        setIdeas(fetchedIdeas);
+        const parsedIdeas: ParsedStockIdea[] = fetchedIdeas.map((idea) => ({
+          ...idea,
+          parsedCategories: safeParse<string[]>(idea.categories, []),
+          parsedUnknownWords: safeParse<{ word: string; result: string }[]>(
+            idea.unknownWords,
+            [],
+          ),
+          parsedRelatedLinks: safeParse<
+            { memo: string; url: string; title: string }[]
+          >(idea.relatedLinks, []),
+        }));
+        setIdeas(parsedIdeas);
       } catch (err) {
         console.error("Error fetching ideas:", err);
         setError("データの取得に失敗しました。");
@@ -56,6 +80,7 @@ export default function SearchPanel() {
       const parsed = safeParse<string[]>(idea.categories, []);
       parsed.forEach((cat) => categories.add(cat));
     });
+    console.log("カテゴリ", ideas);
     return Array.from(categories);
   }, [ideas]);
 
@@ -97,9 +122,81 @@ export default function SearchPanel() {
     });
   }, [ideas, searchTerm, selectedCategory, startDate, endDate]);
 
+  // マークダウンダウンロード機能
+  const handleDownloadMarkdown = () => {
+    // ダウンロードする対象：ideas(filteredIdeasは名前の通り、ideasを検索してフィルタリングした後の値)
+    const targetIdeas = filteredIdeas;
+
+    if (targetIdeas.length === 0) {
+      alert("ダウンロードするデータがありません。");
+      return;
+    }
+
+    // 1. マークダウンテキストの生成
+    let mdContent = "# 思考ストック一覧\n\n";
+
+    targetIdeas.forEach((idea) => {
+      const date = new Date(idea.createdAt).toLocaleDateString();
+      const categories =
+        idea.parsedCategories.length > 0
+          ? idea.parsedCategories.join(", ")
+          : "未分類";
+
+      mdContent += `## [${date}] カテゴリ: ${categories}\n\n`;
+      mdContent += `**詳細:**\n${idea.details || "詳細なし"}\n\n`;
+
+      // わからなかった単語がある場合
+      if (idea.parsedUnknownWords && idea.parsedUnknownWords.length > 0) {
+        mdContent += `**不明な単語:**\n`;
+        idea.parsedUnknownWords.forEach((wordObj) => {
+          mdContent += `- ${wordObj.word}: ${wordObj.result}\n`;
+        });
+        mdContent += `\n`;
+      }
+
+      // 関連リンクがある場合
+      if (idea.parsedRelatedLinks && idea.parsedRelatedLinks.length > 0) {
+        mdContent += `**関連リンク:**\n`;
+        idea.parsedRelatedLinks.forEach((link) => {
+          const memoStr = link.memo ? ` (${link.memo})` : "";
+          mdContent += `- [${link.title || link.url}](${link.url})${memoStr}\n`;
+        });
+        mdContent += `\n`;
+      }
+
+      mdContent += `---\n\n`;
+    });
+
+    // 2. ブラウザ上でファイルを生成してダウンロード
+    const blob = new Blob([mdContent], {
+      type: "text/markdown;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    // ファイル名に今日の日付を入れる
+    const today = new Date().toISOString().split("T")[0];
+    link.href = url;
+    link.setAttribute("download", `思考ストック一覧-${today}.md`);
+
+    // 一時的にDOMに追加してクリックイベントを発火し、すぐに消す
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="relative flex h-full flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
-      <h2 className="text-xl font-bold">確認・検索</h2>
+      <div className="flex gap-4 border-white">
+        <h1 className="text-xl font-bold">確認・検索</h1>
+        <Button
+          onClick={handleDownloadMarkdown}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+        >
+          マークダウンダウンロード
+        </Button>
+      </div>
 
       {/* 検索コントロール群 */}
       <div className="flex flex-col gap-3">
@@ -153,8 +250,6 @@ export default function SearchPanel() {
         <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto">
           {/* ideas ではなく filteredIdeas を map で展開する */}
           {filteredIdeas.map((idea) => {
-            const categories = safeParse<string[]>(idea.categories, []);
-
             return (
               <div
                 key={idea.id}
@@ -163,8 +258,8 @@ export default function SearchPanel() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-2">
-                    {categories.length > 0 ? (
-                      categories.map((cat, i) => (
+                    {idea.parsedCategories.length > 0 ? (
+                      idea.parsedCategories.map((cat, i) => (
                         <span
                           key={i}
                           className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
