@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { StockIdea, TechnicalUnderstanding } from "@/lib/gas-api";
+import { StockIdea, TechnicalUnderstanding } from "../types";
 import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
 import { DatePicker } from "@/components/ui/date-picker";

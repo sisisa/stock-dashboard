@@ -1,4 +1,4 @@
-import { StockIdea } from "../types";
+import { StockIdea, StockIdeaInput } from "../types";
 
 function getGasUrl(): string {
   const url = process.env.NEXT_PUBLIC_GAS_WEB_APP_URL;
@@ -105,6 +105,41 @@ export async function createStockIdea(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const json = await response.json();
+    if (json.success) {
+      return json.data as StockIdea;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error adding stock to GAS:", error);
+    return null;
+  }
+}
+
+// データ追加 (POST)
+export async function addStockIdea(
+  data: StockIdeaInput,
+): Promise<StockIdea | null> {
+  const gasUrl = getGasUrl();
+  if (!gasUrl) return null;
+
+  try {
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      // CORS回避のため text/plain を使用
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      redirect: "follow",
+      body: JSON.stringify({ action: "add_stock", ...data }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // GAS側からのレスポンスをJSONとしてパース
+    const text = await response.text();
+    const json = JSON.parse(text);
+
     if (json.success) {
       return json.data as StockIdea;
     }

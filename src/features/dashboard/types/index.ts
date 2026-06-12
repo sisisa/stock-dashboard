@@ -6,10 +6,22 @@ export interface TechnicalUnderstanding {
   trigger: string;
   without: string;
 }
+
+export interface UnknownWord {
+  word: string;
+  result: string;
+}
+
+export interface RelatedLink {
+  memo: string;
+  url: string;
+  title: string;
+}
+
 export interface StockIdea {
   id: number;
   details: string;
-  technicalUnderstanding: string;
+  technicalUnderstanding: string; // JSON文字列
   unknownWords: string; // JSON文字列
   relatedLinks: string; // JSON文字列
   ownWords: string;
@@ -20,8 +32,9 @@ export interface StockIdea {
   createdAt: string;
   updatedAt: string;
 }
-export interface RelatedLink {
-  memo: string;
-  url: string;
-  title: string;
-}
+
+// 登録用に自動生成項目を除外した型
+export type StockIdeaInput = Omit<
+  StockIdea,
+  "id" | "isUsed" | "draftUrl" | "createdAt" | "updatedAt"
+>;

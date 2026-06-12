@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { StockIdea, TechnicalUnderstanding } from "@/lib/gas-api";
+import { StockIdea, TechnicalUnderstanding } from "../types";
 
 interface IdeaDetailModalProps {
   idea: StockIdea;

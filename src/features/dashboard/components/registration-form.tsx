@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { addStockIdea, StockIdeaInput } from "@/lib/gas-api";
+import { addStockIdea } from "../api/gas-client";
+import { StockIdeaInput } from "../types";
 import { Button } from "@/components/ui/button";
 
 interface UnknownWord {
