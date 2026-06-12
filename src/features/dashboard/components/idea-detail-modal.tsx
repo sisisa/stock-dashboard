@@ -1,12 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { StockIdea, TechnicalUnderstanding } from "../types";
-
-interface IdeaDetailModalProps {
-  idea: StockIdea;
-  onClose: () => void;
-}
+import { IdeaDetailModalProps, TechnicalUnderstanding } from "../types";
 
 /**
  * 外部から渡されるJSON文字列を安全にパースするためのヘルパー

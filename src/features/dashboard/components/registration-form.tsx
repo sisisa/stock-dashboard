@@ -2,37 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { addStockIdea } from "../api/gas-client";
-import { StockIdeaInput } from "../types";
+import {
+  StockIdeaInput,
+  TechnicalUnderstanding,
+  UnknownWord,
+  LinkItem,
+  DraftData,
+} from "../types";
 import { Button } from "@/components/ui/button";
-
-interface UnknownWord {
-  word: string;
-  result: string;
-}
-
-interface LinkItem {
-  memo: string;
-  url: string;
-  title: string;
-}
-
-interface TechnicalUnderstanding {
-  why: string;
-  problem: string;
-  analogy: string;
-  mechanism: string;
-  trigger: string;
-  without: string;
-}
-interface DraftData {
-  details?: string;
-  technicalUnderstanding?: TechnicalUnderstanding; // 追加
-  unknownWords?: UnknownWord[];
-  links?: LinkItem[];
-  ownWords?: string;
-  metaphor?: string;
-  categories?: string[];
-}
 
 export default function RegistrationForm() {
   const [details, setDetails] = useState("");

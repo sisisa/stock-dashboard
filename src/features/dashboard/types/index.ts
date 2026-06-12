@@ -12,6 +12,21 @@ export interface UnknownWord {
   result: string;
 }
 
+export interface DraftData {
+  details?: string;
+  technicalUnderstanding?: TechnicalUnderstanding; // 追加
+  unknownWords?: UnknownWord[];
+  links?: LinkItem[];
+  ownWords?: string;
+  metaphor?: string;
+  categories?: string[];
+}
+
+export interface LinkItem {
+  memo: string;
+  url: string;
+  title: string;
+}
 export interface RelatedLink {
   memo: string;
   url: string;
@@ -38,3 +53,19 @@ export type StockIdeaInput = Omit<
   StockIdea,
   "id" | "isUsed" | "draftUrl" | "createdAt" | "updatedAt"
 >;
+
+export type ParsedStockIdea = StockIdea & {
+  parsedTechnicalUnderstanding: TechnicalUnderstanding;
+  parsedCategories: string[];
+  parsedUnknownWords: { word: string; result: string }[];
+  parsedRelatedLinks: { memo: string; url: string; title: string }[];
+};
+
+export interface IdeaDetailModalProps {
+  idea: StockIdea;
+  onClose: () => void;
+}
+
+export interface StockFormProps {
+  onComplete: () => void;
+}

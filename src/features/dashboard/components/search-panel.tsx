@@ -1,20 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { StockIdea, TechnicalUnderstanding } from "../types";
+import { ParsedStockIdea, TechnicalUnderstanding } from "../types";
 import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
 
 import { Button } from "@/components/ui/button";
-
-type ParsedStockIdea = StockIdea & {
-  parsedTechnicalUnderstanding: TechnicalUnderstanding;
-  parsedCategories: string[];
-  parsedUnknownWords: { word: string; result: string }[];
-  parsedRelatedLinks: { memo: string; url: string; title: string }[];
-};
 
 /**
  * JSON文字列を安全にパースするためのヘルパー関数

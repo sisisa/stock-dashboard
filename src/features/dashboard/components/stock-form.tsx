@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useEffect, ClipboardEvent, ChangeEvent } from "react";
-import { RelatedLink } from "../types";
+import { RelatedLink, StockFormProps } from "../types";
 import { createStockIdea } from "../api/gas-client";
-
-interface StockFormProps {
-  onComplete: () => void;
-}
 
 export function StockForm({ onComplete }: StockFormProps) {
   const [details, setDetails] = useState("");
@@ -94,9 +90,7 @@ export function StockForm({ onComplete }: StockFormProps) {
       <h2 className="mb-5 text-xl font-bold">アイデア・メモの登録</h2>
 
       <div className="mb-4 flex flex-col gap-2">
-        <label className="text-sm font-semibold text-white/80">
-          詳細の記載
-        </label>
+        <label className="text-sm font-semibold text-white">詳細の記載</label>
         <textarea
           value={details}
           onChange={handleDetailsChange}
@@ -107,7 +101,7 @@ export function StockForm({ onComplete }: StockFormProps) {
       </div>
 
       <div className="mb-4 flex flex-col gap-2">
-        <label className="text-sm font-semibold text-white/80">
+        <label className="text-sm font-semibold text-white">
           関連リンク（課題対応用コピペ対応）
         </label>
         <input
@@ -128,7 +122,7 @@ export function StockForm({ onComplete }: StockFormProps) {
                 <span className="font-bold text-blue-400">{link.title}</span>
                 <span className="mx-2">-</span>
                 <span>{link.memo}</span>
-                <div className="mt-1 text-white/50">{link.url}</div>
+                <div className="mt-1 text-white">{link.url}</div>
               </li>
             ))}
           </ul>
