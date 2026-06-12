@@ -6,11 +6,12 @@ export interface Idea {
   title: string;
   prompt: string;
   isUsed: boolean;
-  url: string;      // The final published URL
+  url: string; // The final published URL
   draftUrl: string; // The URL of the drafted Google Doc
   category: string; // "AI系", "日常系", etc.
   createdAt: string;
   updatedAt: string; // Tracks the last modification time
+  technicalUnderstanding: string;
 }
 
 // Helper to get the GAS URL safely
@@ -27,24 +28,39 @@ export async function getIdeas(): Promise<Idea[]> {
   if (!gasUrl) return [];
 
   try {
-    const res = await fetch(gasUrl, { cache: 'no-store' }); // Always fetch fresh data
+    const res = await fetch(gasUrl, { cache: "no-store" }); // Always fetch fresh data
     const json = await res.json();
     if (json.success && Array.isArray(json.data)) {
       return json.data as Idea[];
     }
-    console.error('GAS GET Error:', json.error);
+    console.error("GAS GET Error:", json.error);
     return [];
   } catch (err) {
-    console.error('Error fetching ideas from GAS:', err);
+    console.error("Error fetching ideas from GAS:", err);
     return [];
   }
 }
 
-export async function addIdea(title: string, prompt: string = "", category: string = "未分類"): Promise<Idea> {
+export async function addIdea(
+  title: string,
+  prompt: string = "",
+  category: string = "未分類",
+): Promise<Idea> {
   const gasUrl = getGasUrl();
   const now = new Date().toISOString();
-  const fallbackIdea: Idea = { id: Date.now(), title, prompt, isUsed: false, url: "", draftUrl: "", category, createdAt: now, updatedAt: now };
-  
+  const fallbackIdea: Idea = {
+    id: Date.now(),
+    title,
+    prompt,
+    isUsed: false,
+    url: "",
+    draftUrl: "",
+    category,
+    createdAt: now,
+    updatedAt: now,
+    technicalUnderstanding: "",
+  };
+
   if (!gasUrl) return fallbackIdea;
 
   try {
@@ -52,23 +68,23 @@ export async function addIdea(title: string, prompt: string = "", category: stri
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "add_idea", title, prompt, category }),
-      cache: 'no-store'
+      cache: "no-store",
     });
     const text = await res.text();
     let json;
     try {
       json = JSON.parse(text);
     } catch {
-      console.error('GAS POST (add) Error (Not JSON):', text.substring(0, 200));
+      console.error("GAS POST (add) Error (Not JSON):", text.substring(0, 200));
       return fallbackIdea;
     }
-    
+
     if (json.success && json.data) {
       return json.data as Idea;
     }
-    console.error('GAS POST (add) Error:', json.error);
+    console.error("GAS POST (add) Error:", json.error);
   } catch (err) {
-    console.error('Error adding idea to GAS:', err);
+    console.error("Error adding idea to GAS:", err);
   }
   return fallbackIdea;
 }
@@ -82,13 +98,13 @@ export async function toggleIdeaUsed(id: number): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "toggle_used", id }),
-      cache: 'no-store'
+      cache: "no-store",
     });
     const json = await res.json();
     if (!json.success) {
-      console.error('GAS POST (toggle) Error:', json.error);
+      console.error("GAS POST (toggle) Error:", json.error);
     }
   } catch (err) {
-    console.error('Error toggling idea in GAS:', err);
+    console.error("Error toggling idea in GAS:", err);
   }
 }

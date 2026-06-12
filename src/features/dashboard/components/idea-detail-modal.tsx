@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { StockIdea } from "@/lib/gas-api";
+import { StockIdea, TechnicalUnderstanding } from "@/lib/gas-api";
 
 interface IdeaDetailModalProps {
   idea: StockIdea;
@@ -33,6 +33,20 @@ export default function IdeaDetailModal({
       onClose();
     }
   };
+
+  // ← 追加: 技術理解フレームワークのパース
+  const techUnderstanding = useMemo(
+    () =>
+      safeParse<TechnicalUnderstanding>(idea.technicalUnderstanding, {
+        why: "",
+        problem: "",
+        analogy: "",
+        mechanism: "",
+        trigger: "",
+        without: "",
+      }),
+    [idea.technicalUnderstanding],
+  );
 
   // 毎回レンダリング時にパースし直さないようメモ化
   // 理由: パース処理は比較的重いため、ideaの内容が変わらない限り再計算を避ける
@@ -100,6 +114,49 @@ export default function IdeaDetailModal({
             </p>
           </div>
 
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-bold text-white/80">
+              技術理解フレームワーク
+            </h3>
+            <div className="grid grid-cols-1 gap-2 rounded bg-[#121214] p-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Why (なぜ存在するのか？)：{techUnderstanding.why || "未記載"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Problem (何を解決するのか？)：
+                  {techUnderstanding.problem || "未記載"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Analogy (何に似ているか？)：
+                  {techUnderstanding.analogy || "未記載"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Mechanism (内部で何が起きているのか？)：
+                  {techUnderstanding.mechanism || "未記載"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Trigger (いつ動くのか？)：
+                  {techUnderstanding.trigger || "未記載"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-base font-bold text-white">
+                  Without (無かったら何が困るのか？)：
+                  {techUnderstanding.without || "未記載"}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* 明確にわからない単語と調査結果 */}
           <div className="flex flex-col gap-2">
             <h4 className="font-semibold text-white">
@@ -134,7 +191,7 @@ export default function IdeaDetailModal({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-blue-400 hover:underline"
+                      className="font-bold text-white hover:underline"
                     >
                       {link.title || link.url}
                     </a>

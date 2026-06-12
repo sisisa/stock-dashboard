@@ -1,7 +1,18 @@
 // GAS（スプレッドシート）と通信するための型定義と関数
+// src/features/dashboard/types/index.ts または src/lib/gas-api.ts 内に追加・修正
+
+export interface TechnicalUnderstanding {
+  why: string;
+  problem: string;
+  analogy: string;
+  mechanism: string;
+  trigger: string;
+  without: string;
+}
 export interface StockIdea {
   id: number;
   details: string;
+  technicalUnderstanding: string;
   unknownWords: string; // JSON文字列
   relatedLinks: string; // JSON文字列
   ownWords: string;

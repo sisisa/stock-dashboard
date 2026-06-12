@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { StockIdea } from "@/lib/gas-api";
+import { StockIdea, TechnicalUnderstanding } from "@/lib/gas-api";
 import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -10,6 +10,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 
 type ParsedStockIdea = StockIdea & {
+  parsedTechnicalUnderstanding: TechnicalUnderstanding;
   parsedCategories: string[];
   parsedUnknownWords: { word: string; result: string }[];
   parsedRelatedLinks: { memo: string; url: string; title: string }[];
@@ -52,6 +53,18 @@ export default function SearchPanel() {
         const fetchedIdeas = await fetchStockIdeas();
         const parsedIdeas: ParsedStockIdea[] = fetchedIdeas.map((idea) => ({
           ...idea,
+          // 追加: 技術理解フレームワークのパース
+          parsedTechnicalUnderstanding: safeParse<TechnicalUnderstanding>(
+            idea.technicalUnderstanding,
+            {
+              why: "",
+              problem: "",
+              analogy: "",
+              mechanism: "",
+              trigger: "",
+              without: "",
+            },
+          ),
           parsedCategories: safeParse<string[]>(idea.categories, []),
           parsedUnknownWords: safeParse<{ word: string; result: string }[]>(
             idea.unknownWords,

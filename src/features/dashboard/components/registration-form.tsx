@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { addStockIdea, StockIdeaInput } from "@/lib/gas-api";
+import { Button } from "@/components/ui/button";
 
 interface UnknownWord {
   word: string;
@@ -14,8 +15,17 @@ interface LinkItem {
   title: string;
 }
 
+interface TechnicalUnderstanding {
+  why: string;
+  problem: string;
+  analogy: string;
+  mechanism: string;
+  trigger: string;
+  without: string;
+}
 interface DraftData {
   details?: string;
+  technicalUnderstanding?: TechnicalUnderstanding; // 追加
   unknownWords?: UnknownWord[];
   links?: LinkItem[];
   ownWords?: string;
@@ -43,13 +53,27 @@ export default function RegistrationForm() {
   // コピー完了時のフィードバック用ステート
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const [techUnderstanding, setTechUnderstanding] =
+    useState<TechnicalUnderstanding>({
+      why: "",
+      problem: "",
+      analogy: "",
+      mechanism: "",
+      trigger: "",
+      without: "",
+    });
+
   // 1. ローカルストレージからの復元
   useEffect(() => {
     const savedData = localStorage.getItem("draft_idea_stock");
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData) as DraftData;
+        // 詳細
         if (parsed.details) setDetails(parsed.details);
+
+        if (parsed.technicalUnderstanding)
+          setTechUnderstanding(parsed.technicalUnderstanding);
         if (parsed.unknownWords) setUnknownWords(parsed.unknownWords);
         if (parsed.links) setLinks(parsed.links);
         if (parsed.ownWords) setOwnWords(parsed.ownWords);
@@ -69,6 +93,15 @@ export default function RegistrationForm() {
       "draft_idea_stock",
       JSON.stringify({ ...currentData, ...newData }),
     );
+  };
+
+  const handleTechUnderstandingChange = (
+    field: keyof TechnicalUnderstanding,
+    value: string,
+  ) => {
+    const newData = { ...techUnderstanding, [field]: value };
+    setTechUnderstanding(newData);
+    saveToStorage({ technicalUnderstanding: newData });
   };
 
   // 3. 各入力ハンドラー
@@ -180,6 +213,7 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
     const payload: StockIdeaInput = {
       details,
+      technicalUnderstanding: JSON.stringify(techUnderstanding),
       unknownWords: JSON.stringify(unknownWords),
       relatedLinks: JSON.stringify(links), // 登録された全リンクをJSON化して送信
       ownWords,
@@ -203,7 +237,7 @@ export default function RegistrationForm() {
   };
 
   return (
-    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-5">
+    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
       <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
 
       {/* 詳細の記載 */}
@@ -213,8 +247,99 @@ export default function RegistrationForm() {
           value={details}
           onChange={handleDetailsChange}
           placeholder="ここに詳細を記載します..."
-          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
         />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded border border-white bg-[#1a1a1c] p-4">
+        <h3 className="text-sm font-bold text-white">技術理解フレームワーク</h3>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Why */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Why (なぜ存在するのか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.why}
+              onChange={(e) =>
+                handleTechUnderstandingChange("why", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+            />
+          </div>
+          {/* Problem */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Problem (何を解決するのか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.problem}
+              onChange={(e) =>
+                handleTechUnderstandingChange("problem", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+            />
+          </div>
+          {/* Analogy */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Analogy (何に似ているか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.analogy}
+              onChange={(e) =>
+                handleTechUnderstandingChange("analogy", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+            />
+          </div>
+          {/* Mechanism */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Mechanism (内部で何が起きているのか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.mechanism}
+              onChange={(e) =>
+                handleTechUnderstandingChange("mechanism", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
+            />
+          </div>
+          {/* Trigger */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Trigger (いつ動くのか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.trigger}
+              onChange={(e) =>
+                handleTechUnderstandingChange("trigger", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
+            />
+          </div>
+          {/* Without */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-white">
+              Without (無かったら何が困るのか？)
+            </label>
+            <input
+              type="text"
+              value={techUnderstanding.without}
+              onChange={(e) =>
+                handleTechUnderstandingChange("without", e.target.value)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       {/* わからない単語と調査した結果 */}
@@ -223,12 +348,6 @@ export default function RegistrationForm() {
           <label className="font-semibold text-white">
             わからない単語と調査した結果
           </label>
-          <button
-            onClick={addUnknownWord}
-            className="text-xs text-blue-400 hover:underline"
-          >
-            ＋ 行を追加
-          </button>
         </div>
         {unknownWords.map((item, index) => (
           <div key={index} className="flex gap-2">
@@ -237,7 +356,7 @@ export default function RegistrationForm() {
               placeholder="単語"
               value={item.word}
               onChange={(e) => updateUnknownWord(index, "word", e.target.value)}
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
             />
             <input
               type="text"
@@ -246,10 +365,18 @@ export default function RegistrationForm() {
               onChange={(e) =>
                 updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
             />
           </div>
         ))}
+        <div className="flex items-center justify-end">
+          <Button
+            onClick={addUnknownWord}
+            className="bg-primary hover:bg-primary text-primary-foreground gap-2"
+          >
+            追加
+          </Button>
+        </div>
       </div>
 
       {/* ★ 関連リンク（今回の改修箇所） */}
@@ -265,7 +392,7 @@ export default function RegistrationForm() {
             placeholder="リンクのメモ"
             value={linkMemo}
             onChange={(e) => setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
           />
           {/* 既存の特殊コピペ機能は、URL欄にペーストされたときに発火させる */}
           <input
@@ -274,14 +401,14 @@ export default function RegistrationForm() {
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             onPaste={handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
             value={linkTitle}
             onChange={(e) => setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
@@ -321,7 +448,7 @@ export default function RegistrationForm() {
                     <button
                       type="button"
                       onClick={() => handleCopySpecialFormat(link, index)}
-                      className="rounded border border-white/20 bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 hover:text-white"
+                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 hover:text-white"
                       title="<メモ, URL, タイトル>の形式でコピー"
                     >
                       {copiedIndex === index ? "コピー完了!" : "特殊コピペ"}
@@ -348,7 +475,7 @@ export default function RegistrationForm() {
         <textarea
           value={ownWords}
           onChange={handleOwnWordsChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
         />
       </div>
 
@@ -358,7 +485,7 @@ export default function RegistrationForm() {
         <textarea
           value={metaphor}
           onChange={handleMetaphorChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
         />
       </div>
 
@@ -372,7 +499,7 @@ export default function RegistrationForm() {
             value={categoryInput}
             onChange={(e) => setCategoryInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addCategory(categoryInput)}
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
           />
           <button
             onClick={() => addCategory(categoryInput)}
