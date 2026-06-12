@@ -75,6 +75,7 @@ export function StockForm({ onComplete }: StockFormProps) {
       ownWords: "",
       metaphor: "",
       categories: "[]",
+      technicalUnderstanding: "[]",
     });
 
     if (success) {
