@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { IdeaDetailModalProps, TechnicalUnderstanding } from "../types";
+import {
+  TechnicalUnderstanding,
+  IdeaDetailModalProps,
+  ThinkingTraining,
+} from "../types";
 
 /**
  * 外部から渡されるJSON文字列を安全にパースするためのヘルパー
@@ -29,19 +33,37 @@ export default function IdeaDetailModal({
     }
   };
 
-  // ← 追加: 技術理解フレームワークのパース
-  const techUnderstanding = useMemo(
+  const techData = useMemo(
     () =>
-      safeParse<TechnicalUnderstanding>(idea.technicalUnderstanding, {
-        why: "",
-        problem: "",
-        analogy: "",
-        mechanism: "",
-        trigger: "",
-        without: "",
-      }),
+      safeParse<TechnicalUnderstanding>(
+        idea.technicalUnderstanding,
+        {} as TechnicalUnderstanding,
+      ),
     [idea.technicalUnderstanding],
   );
+  const trainingData = useMemo(
+    () =>
+      safeParse<ThinkingTraining>(
+        idea.thinkingTraining,
+        {} as ThinkingTraining,
+      ),
+    [idea.thinkingTraining],
+  );
+
+  // 空欄の項目はレンダリングしないためのヘルパー関数
+  const renderField = (
+    label: string,
+    value: string | undefined,
+    colorClass: string = "text-blue-400",
+  ) => {
+    if (!value || value.trim() === "") return null;
+    return (
+      <div className="mb-2 flex flex-col">
+        <span className={`font-bold ${colorClass}`}>{label}</span>
+        <span className="whitespace-pre-wrap text-white">{value}</span>
+      </div>
+    );
+  };
 
   // 毎回レンダリング時にパースし直さないようメモ化
   // 理由: パース処理は比較的重いため、ideaの内容が変わらない限り再計算を避ける
@@ -109,113 +131,141 @@ export default function IdeaDetailModal({
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-bold text-white/80">
-              技術理解フレームワーク
-            </h3>
-            <div className="grid grid-cols-1 gap-2 rounded bg-[#121214] p-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Why (なぜ存在するのか？)：{techUnderstanding.why || "未記載"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Problem (何を解決するのか？)：
-                  {techUnderstanding.problem || "未記載"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Analogy (何に似ているか？)：
-                  {techUnderstanding.analogy || "未記載"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Mechanism (内部で何が起きているのか？)：
-                  {techUnderstanding.mechanism || "未記載"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Trigger (いつ動くのか？)：
-                  {techUnderstanding.trigger || "未記載"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-base font-bold text-white">
-                  Without (無かったら何が困るのか？)：
-                  {techUnderstanding.without || "未記載"}
-                </span>
+          {/* モードに応じた表示切り替え */}
+          {idea.activeMode === "training" ? (
+            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
+              <h3 className="mb-2 text-sm font-bold text-purple-400">
+                思考トレーニング
+              </h3>
+              {renderField("テーマ", trainingData?.theme)}
+              {renderField("論点", trainingData?.issue)}
+              {renderField("今回は考えないこと", trainingData?.exclusion)}
+              {renderField(
+                "一文の結論",
+                trainingData?.oneSentence,
+                "text-red-400",
+              )}
+              {/* 必要な項目を適宜renderFieldで呼び出す */}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
+              <h3 className="mb-2 text-sm font-bold text-white">
+                理解フレームワーク
+              </h3>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {renderField(
+                  "Why (なぜ存在するのか？)",
+                  techData?.why,
+                  "text-white",
+                )}
+                {renderField(
+                  "Problem (何を解決するのか？)",
+                  techData?.problem,
+                  "text-white",
+                )}
+                {renderField(
+                  "Difference (他の類似概念との決定的な違いは？)",
+                  techData?.difference,
+                  "text-white",
+                )}
+                {renderField(
+                  "Mechanism (内部で何が起きているのか？)",
+                  techData?.mechanism,
+                  "text-white",
+                )}
+                {renderField(
+                  "Trigger (いつ動くのか？)",
+                  techData?.trigger,
+                  "text-white",
+                )}
+                {renderField(
+                  "Without (無かったら何が困るのか？)",
+                  techData?.without,
+                  "text-white",
+                )}
+                {renderField(
+                  "Demerit (デメリット・トレードオフ)",
+                  techData?.demerit,
+                  "text-white",
+                )}
+                {renderField(
+                  "Situation (どんな場面で使うべきか？)",
+                  techData?.situation,
+                  "text-white",
+                )}
+                {renderField(
+                  "Analogy (何に似ているのか？)",
+                  techData?.analogy,
+                  "text-white",
+                )}
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* 明確にわからない単語と調査結果 */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">
-              明確にわからない単語と調査した結果
-            </h4>
-            {unknownWords.length > 0 ? (
-              <ul className="flex flex-col gap-2">
-                {unknownWords.map((item, index) => (
-                  <li key={index} className="rounded bg-white/5 p-3">
-                    <span className="font-bold text-white">{item.word}</span>
-                    <span className="mx-2 text-white">：</span>
-                    <span>{item.result}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-white/40">未記載</p>
-            )}
-          </div>
+        {/* 明確にわからない単語と調査結果 */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">
+            明確にわからない単語と調査した結果
+          </h4>
+          {unknownWords.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {unknownWords.map((item, index) => (
+                <li key={index} className="rounded bg-white/5 p-3">
+                  <span className="font-bold text-white">{item.word}</span>
+                  <span className="mx-2 text-white">：</span>
+                  <span>{item.result}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-white/40">未記載</p>
+          )}
+        </div>
 
-          {/* 関連リンク */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">関連リンク</h4>
-            {relatedLinks.length > 0 ? (
-              <ul className="flex flex-col gap-2">
-                {relatedLinks.map((link, index) => (
-                  <li
-                    key={index}
-                    className="flex flex-col gap-1 rounded bg-white/5 p-3"
+        {/* 関連リンク */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">関連リンク</h4>
+          {relatedLinks.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {relatedLinks.map((link, index) => (
+                <li
+                  key={index}
+                  className="flex flex-col gap-1 rounded bg-white/5 p-3"
+                >
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-white hover:underline"
                   >
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-white hover:underline"
-                    >
-                      {link.title || link.url}
-                    </a>
-                    {link.memo && (
-                      <p className="text-xs text-white">{link.memo}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-white/40">未記載</p>
-            )}
-          </div>
+                    {link.title || link.url}
+                  </a>
+                  {link.memo && (
+                    <p className="text-xs text-white">{link.memo}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-white/40">未記載</p>
+          )}
+        </div>
 
-          {/* 自分の言葉で整理 */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">自分の言葉で整理</h4>
-            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
-              {idea.ownWords || "未記載"}
-            </p>
-          </div>
+        {/* 自分の言葉で整理 */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">自分の言葉で整理</h4>
+          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+            {idea.ownWords || "未記載"}
+          </p>
+        </div>
 
-          {/* たとえを考える */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">たとえ</h4>
-            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
-              {idea.metaphor || "未記載"}
-            </p>
-          </div>
+        {/* たとえを考える */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">たとえ</h4>
+          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+            {idea.metaphor || "未記載"}
+          </p>
         </div>
       </div>
     </div>

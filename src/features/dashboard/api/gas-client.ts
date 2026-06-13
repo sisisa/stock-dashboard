@@ -69,6 +69,8 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
               createdAt: String(row[9] || ""),
               updatedAt: String(row[10] || ""),
               technicalUnderstanding: String(row[11] || ""),
+              thinkingTraining: String(row[12] || ""),
+              activeMode: String(row[13] || ""),
             };
           })
           // フィルタリング関数の引数と Type Guard の型を明記し、安全に null を除外

@@ -46,7 +46,7 @@ export default function SearchPanel() {
         const fetchedIdeas = await fetchStockIdeas();
         const parsedIdeas: ParsedStockIdea[] = fetchedIdeas.map((idea) => ({
           ...idea,
-          // 追加: 技術理解フレームワークのパース
+          // 技術理解フレームワークのパース
           parsedTechnicalUnderstanding: safeParse<TechnicalUnderstanding>(
             idea.technicalUnderstanding,
             {
@@ -56,6 +56,9 @@ export default function SearchPanel() {
               mechanism: "",
               trigger: "",
               without: "",
+              demerit: "",
+              situation: "",
+              difference: "",
             },
           ),
           parsedCategories: safeParse<string[]>(idea.categories, []),

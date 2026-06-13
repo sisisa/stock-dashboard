@@ -2,17 +2,54 @@
 
 import { useState, useEffect } from "react";
 import { addStockIdea } from "../api/gas-client";
+
+import { Button } from "@/components/ui/button";
+
 import {
   StockIdeaInput,
   TechnicalUnderstanding,
+  ThinkingTraining,
   UnknownWord,
   LinkItem,
   DraftData,
+  RelatedLink,
 } from "../types";
-import { Button } from "@/components/ui/button";
 
-export default function RegistrationForm() {
+import TechFrameworkForm from "./tech-framework-form";
+import TrainingFrameworkForm from "./training-framework-form";
+
+// 思考トレーニングの初期値テンプレート
+const defaultTrainingData: ThinkingTraining = {
+  theme: "",
+  issue: "",
+  exclusion: "",
+  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
+  otherPerspective: { a: "", b: "", c: "", common: "" },
+  ownOpinion: { op1: "", op2: "", op3: "", common: "" },
+  whySo: { question: "", answers: ["", "", "", "", ""] },
+  soWhat: { question: "", answers: ["", "", "", "", ""] },
+  goodLineLog: "",
+  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
+  concreteToAbstract: { concrete: "", abstract: "" },
+  abstractToConcrete: { concrete: "", abstract: "" },
+  analogy: { summary: "", analogy: "", reason: "" },
+  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
+  oneSentence: "",
+  discovery: "",
+};
+interface RegistrationFormProps {
+  isRightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
+}
+
+export default function RegistrationForm({
+  isRightPanelOpen = true,
+  onToggleRightPanel,
+}: RegistrationFormProps) {
   const [details, setDetails] = useState("");
+  const [activeMode, setActiveMode] = useState<"understanding" | "training">(
+    "understanding",
+  );
   const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
   const [links, setLinks] = useState<LinkItem[]>([]);
 
@@ -35,11 +72,16 @@ export default function RegistrationForm() {
     useState<TechnicalUnderstanding>({
       why: "",
       problem: "",
-      analogy: "",
       mechanism: "",
       trigger: "",
       without: "",
+      demerit: "",
+      situation: "",
+      analogy: "",
+      difference: "",
     });
+  const [thinkingTraining, setThinkingTraining] =
+    useState<ThinkingTraining>(defaultTrainingData);
 
   // 1. ローカルストレージからの復元
   useEffect(() => {
@@ -192,6 +234,8 @@ export default function RegistrationForm() {
     const payload: StockIdeaInput = {
       details,
       technicalUnderstanding: JSON.stringify(techUnderstanding),
+      thinkingTraining: JSON.stringify(thinkingTraining),
+      activeMode: JSON.stringify(activeMode),
       unknownWords: JSON.stringify(unknownWords),
       relatedLinks: JSON.stringify(links), // 登録された全リンクをJSON化して送信
       ownWords,
@@ -216,7 +260,41 @@ export default function RegistrationForm() {
 
   return (
     <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
-      <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
+        {onToggleRightPanel && (
+          <Button
+            onClick={onToggleRightPanel}
+            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white/20 hover:text-white"
+          >
+            {isRightPanelOpen
+              ? "検索・確認パネルを隠す"
+              : "検索・確認パネルを開く"}
+          </Button>
+        )}
+      </div>
+
+      {/* タブ切り替えUI */}
+      <div className="flex gap-2 border-b border-white/10 pb-2">
+        <button
+          onClick={() => {
+            setActiveMode("understanding");
+            saveToStorage({ activeMode: "understanding" });
+          }}
+          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+        >
+          理解モード（技術・概念）
+        </button>
+        <button
+          onClick={() => {
+            setActiveMode("training");
+            saveToStorage({ activeMode: "training" });
+          }}
+          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+        >
+          思考トレーニング
+        </button>
+      </div>
 
       {/* 詳細の記載 */}
       <div className="flex flex-col gap-2">
@@ -225,100 +303,29 @@ export default function RegistrationForm() {
           value={details}
           onChange={handleDetailsChange}
           placeholder="ここに詳細を記載します..."
-          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
+          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-3 rounded border border-white bg-[#1a1a1c] p-4">
-        <h3 className="text-sm font-bold text-white">技術理解フレームワーク</h3>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Why */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Why (なぜ存在するのか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.why}
-              onChange={(e) =>
-                handleTechUnderstandingChange("why", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
-            />
-          </div>
-          {/* Problem */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Problem (何を解決するのか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.problem}
-              onChange={(e) =>
-                handleTechUnderstandingChange("problem", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
-            />
-          </div>
-          {/* Analogy */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Analogy (何に似ているか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.analogy}
-              onChange={(e) =>
-                handleTechUnderstandingChange("analogy", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
-            />
-          </div>
-          {/* Mechanism */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Mechanism (内部で何が起きているのか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.mechanism}
-              onChange={(e) =>
-                handleTechUnderstandingChange("mechanism", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
-            />
-          </div>
-          {/* Trigger */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Trigger (いつ動くのか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.trigger}
-              onChange={(e) =>
-                handleTechUnderstandingChange("trigger", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
-            />
-          </div>
-          {/* Without */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-white">
-              Without (無かったら何が困るのか？)
-            </label>
-            <input
-              type="text"
-              value={techUnderstanding.without}
-              onChange={(e) =>
-                handleTechUnderstandingChange("without", e.target.value)
-              }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white/90 focus:border-white focus:outline-none"
-            />
-          </div>
-        </div>
-      </div>
+      {/* 動的フォームの出し分け */}
+      {activeMode === "understanding" ? (
+        <TechFrameworkForm
+          data={techUnderstanding}
+          onChange={(field, value) => {
+            const newData = { ...techUnderstanding, [field]: value };
+            setTechUnderstanding(newData);
+            saveToStorage({ technicalUnderstanding: newData });
+          }}
+        />
+      ) : (
+        <TrainingFrameworkForm
+          data={thinkingTraining}
+          onChange={(newData) => {
+            setThinkingTraining(newData);
+            saveToStorage({ thinkingTraining: newData });
+          }}
+        />
+      )}
 
       {/* わからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
@@ -334,7 +341,7 @@ export default function RegistrationForm() {
               placeholder="単語"
               value={item.word}
               onChange={(e) => updateUnknownWord(index, "word", e.target.value)}
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
+              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
             />
             <input
               type="text"
@@ -343,7 +350,7 @@ export default function RegistrationForm() {
               onChange={(e) =>
                 updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
+              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
             />
           </div>
         ))}
@@ -370,7 +377,7 @@ export default function RegistrationForm() {
             placeholder="リンクのメモ"
             value={linkMemo}
             onChange={(e) => setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           {/* 既存の特殊コピペ機能は、URL欄にペーストされたときに発火させる */}
           <input
@@ -379,14 +386,14 @@ export default function RegistrationForm() {
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             onPaste={handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
             value={linkTitle}
             onChange={(e) => setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
@@ -419,7 +426,7 @@ export default function RegistrationForm() {
                       {link.title || link.url}
                     </a>
                     {link.memo && (
-                      <p className="mt-1 text-xs text-white/60">{link.memo}</p>
+                      <p className="mt-1 text-xs text-white">{link.memo}</p>
                     )}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-2">
@@ -434,7 +441,7 @@ export default function RegistrationForm() {
                     <button
                       type="button"
                       onClick={() => handleRemoveLink(index)}
-                      className="rounded text-white/40 transition-colors hover:text-red-400"
+                      className="rounded text-white transition-colors hover:text-red-400"
                       title="削除"
                     >
                       ✕
@@ -453,7 +460,7 @@ export default function RegistrationForm() {
         <textarea
           value={ownWords}
           onChange={handleOwnWordsChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
@@ -463,7 +470,7 @@ export default function RegistrationForm() {
         <textarea
           value={metaphor}
           onChange={handleMetaphorChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
@@ -477,7 +484,7 @@ export default function RegistrationForm() {
             value={categoryInput}
             onChange={(e) => setCategoryInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addCategory(categoryInput)}
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white focus:outline-none"
+            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
           />
           <button
             onClick={() => addCategory(categoryInput)}
