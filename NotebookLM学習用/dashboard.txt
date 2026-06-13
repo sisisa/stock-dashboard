@@ -1,7 +1,7 @@
 ================================================
 FILE: src/features/dashboard/api/gas-client.ts
 ================================================
-import { StockIdea } from "../types";
+import { StockIdea, StockIdeaInput } from "../types";
 
 function getGasUrl(): string {
   const url = process.env.NEXT_PUBLIC_GAS_WEB_APP_URL;
@@ -71,6 +71,9 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
               draftUrl: String(row[8] || ""),
               createdAt: String(row[9] || ""),
               updatedAt: String(row[10] || ""),
+              technicalUnderstanding: String(row[11] || ""),
+              thinkingTraining: String(row[12] || ""),
+              activeMode: String(row[13] || ""),
             };
           })
           // フィルタリング関数の引数と Type Guard の型を明記し、安全に null を除外
@@ -117,6 +120,41 @@ export async function createStockIdea(
   }
 }
 
+// データ追加 (POST)
+export async function addStockIdea(
+  data: StockIdeaInput,
+): Promise<StockIdea | null> {
+  const gasUrl = getGasUrl();
+  if (!gasUrl) return null;
+
+  try {
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      // CORS回避のため text/plain を使用
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      redirect: "follow",
+      body: JSON.stringify({ action: "add_stock", ...data }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // GAS側からのレスポンスをJSONとしてパース
+    const text = await response.text();
+    const json = JSON.parse(text);
+
+    if (json.success) {
+      return json.data as StockIdea;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error adding stock to GAS:", error);
+    return null;
+  }
+}
+
 
 
 ================================================
@@ -125,12 +163,11 @@ FILE: src/features/dashboard/components/idea-detail-modal.tsx
 "use client";
 
 import { useMemo } from "react";
-import { StockIdea } from "@/lib/gas-api";
-
-interface IdeaDetailModalProps {
-  idea: StockIdea;
-  onClose: () => void;
-}
+import {
+  TechnicalUnderstanding,
+  IdeaDetailModalProps,
+  ThinkingTraining,
+} from "../types";
 
 /**
  * 外部から渡されるJSON文字列を安全にパースするためのヘルパー
@@ -156,6 +193,38 @@ export default function IdeaDetailModal({
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const techData = useMemo(
+    () =>
+      safeParse<TechnicalUnderstanding>(
+        idea.technicalUnderstanding,
+        {} as TechnicalUnderstanding,
+      ),
+    [idea.technicalUnderstanding],
+  );
+  const trainingData = useMemo(
+    () =>
+      safeParse<ThinkingTraining>(
+        idea.thinkingTraining,
+        {} as ThinkingTraining,
+      ),
+    [idea.thinkingTraining],
+  );
+
+  // 空欄の項目はレンダリングしないためのヘルパー関数
+  const renderField = (
+    label: string,
+    value: string | undefined,
+    colorClass: string = "text-blue-400",
+  ) => {
+    if (!value || value.trim() === "") return null;
+    return (
+      <div className="mb-2 flex flex-col">
+        <span className={`font-bold ${colorClass}`}>{label}</span>
+        <span className="whitespace-pre-wrap text-white">{value}</span>
+      </div>
+    );
   };
 
   // 毎回レンダリング時にパースし直さないようメモ化
@@ -224,70 +293,141 @@ export default function IdeaDetailModal({
             </p>
           </div>
 
-          {/* 明確にわからない単語と調査結果 */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">
-              明確にわからない単語と調査した結果
-            </h4>
-            {unknownWords.length > 0 ? (
-              <ul className="flex flex-col gap-2">
-                {unknownWords.map((item, index) => (
-                  <li key={index} className="rounded bg-white/5 p-3">
-                    <span className="font-bold text-white">{item.word}</span>
-                    <span className="mx-2 text-white">：</span>
-                    <span>{item.result}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-white/40">未記載</p>
-            )}
-          </div>
+          {/* モードに応じた表示切り替え */}
+          {idea.activeMode === "training" ? (
+            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
+              <h3 className="mb-2 text-sm font-bold text-purple-400">
+                思考トレーニング
+              </h3>
+              {renderField("テーマ", trainingData?.theme)}
+              {renderField("論点", trainingData?.issue)}
+              {renderField("今回は考えないこと", trainingData?.exclusion)}
+              {renderField(
+                "一文の結論",
+                trainingData?.oneSentence,
+                "text-red-400",
+              )}
+              {/* 必要な項目を適宜renderFieldで呼び出す */}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
+              <h3 className="mb-2 text-sm font-bold text-white">
+                理解フレームワーク
+              </h3>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {renderField(
+                  "Why (なぜ存在するのか？)",
+                  techData?.why,
+                  "text-white",
+                )}
+                {renderField(
+                  "Problem (何を解決するのか？)",
+                  techData?.problem,
+                  "text-white",
+                )}
+                {renderField(
+                  "Difference (他の類似概念との決定的な違いは？)",
+                  techData?.difference,
+                  "text-white",
+                )}
+                {renderField(
+                  "Mechanism (内部で何が起きているのか？)",
+                  techData?.mechanism,
+                  "text-white",
+                )}
+                {renderField(
+                  "Trigger (いつ動くのか？)",
+                  techData?.trigger,
+                  "text-white",
+                )}
+                {renderField(
+                  "Without (無かったら何が困るのか？)",
+                  techData?.without,
+                  "text-white",
+                )}
+                {renderField(
+                  "Demerit (デメリット・トレードオフ)",
+                  techData?.demerit,
+                  "text-white",
+                )}
+                {renderField(
+                  "Situation (どんな場面で使うべきか？)",
+                  techData?.situation,
+                  "text-white",
+                )}
+                {renderField(
+                  "Analogy (何に似ているのか？)",
+                  techData?.analogy,
+                  "text-white",
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* 関連リンク */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">関連リンク</h4>
-            {relatedLinks.length > 0 ? (
-              <ul className="flex flex-col gap-2">
-                {relatedLinks.map((link, index) => (
-                  <li
-                    key={index}
-                    className="flex flex-col gap-1 rounded bg-white/5 p-3"
+        {/* 明確にわからない単語と調査結果 */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">
+            明確にわからない単語と調査した結果
+          </h4>
+          {unknownWords.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {unknownWords.map((item, index) => (
+                <li key={index} className="rounded bg-white/5 p-3">
+                  <span className="font-bold text-white">{item.word}</span>
+                  <span className="mx-2 text-white">：</span>
+                  <span>{item.result}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-white/40">未記載</p>
+          )}
+        </div>
+
+        {/* 関連リンク */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">関連リンク</h4>
+          {relatedLinks.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {relatedLinks.map((link, index) => (
+                <li
+                  key={index}
+                  className="flex flex-col gap-1 rounded bg-white/5 p-3"
+                >
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-white hover:underline"
                   >
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-blue-400 hover:underline"
-                    >
-                      {link.title || link.url}
-                    </a>
-                    {link.memo && (
-                      <p className="text-xs text-white">{link.memo}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-white/40">未記載</p>
-            )}
-          </div>
+                    {link.title || link.url}
+                  </a>
+                  {link.memo && (
+                    <p className="text-xs text-white">{link.memo}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-white/40">未記載</p>
+          )}
+        </div>
 
-          {/* 自分の言葉で整理 */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">自分の言葉で整理</h4>
-            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
-              {idea.ownWords || "未記載"}
-            </p>
-          </div>
+        {/* 自分の言葉で整理 */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">自分の言葉で整理</h4>
+          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+            {idea.ownWords || "未記載"}
+          </p>
+        </div>
 
-          {/* たとえを考える */}
-          <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">たとえ</h4>
-            <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
-              {idea.metaphor || "未記載"}
-            </p>
-          </div>
+        {/* たとえを考える */}
+        <div className="flex flex-col gap-2">
+          <h4 className="font-semibold text-white">たとえ</h4>
+          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+            {idea.metaphor || "未記載"}
+          </p>
         </div>
       </div>
     </div>
@@ -302,30 +442,55 @@ FILE: src/features/dashboard/components/registration-form.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { addStockIdea, StockIdeaInput } from "@/lib/gas-api";
+import { addStockIdea } from "../api/gas-client";
 
-interface UnknownWord {
-  word: string;
-  result: string;
+import { Button } from "@/components/ui/button";
+
+import {
+  StockIdeaInput,
+  TechnicalUnderstanding,
+  ThinkingTraining,
+  UnknownWord,
+  LinkItem,
+  DraftData,
+  RelatedLink,
+} from "../types";
+
+import TechFrameworkForm from "./tech-framework-form";
+import TrainingFrameworkForm from "./training-framework-form";
+
+// 思考トレーニングの初期値テンプレート
+const defaultTrainingData: ThinkingTraining = {
+  theme: "",
+  issue: "",
+  exclusion: "",
+  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
+  otherPerspective: { a: "", b: "", c: "", common: "" },
+  ownOpinion: { op1: "", op2: "", op3: "", common: "" },
+  whySo: { question: "", answers: ["", "", "", "", ""] },
+  soWhat: { question: "", answers: ["", "", "", "", ""] },
+  goodLineLog: "",
+  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
+  concreteToAbstract: { concrete: "", abstract: "" },
+  abstractToConcrete: { concrete: "", abstract: "" },
+  analogy: { summary: "", analogy: "", reason: "" },
+  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
+  oneSentence: "",
+  discovery: "",
+};
+interface RegistrationFormProps {
+  isRightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
 }
 
-interface LinkItem {
-  memo: string;
-  url: string;
-  title: string;
-}
-
-interface DraftData {
-  details?: string;
-  unknownWords?: UnknownWord[];
-  links?: LinkItem[];
-  ownWords?: string;
-  metaphor?: string;
-  categories?: string[];
-}
-
-export default function RegistrationForm() {
+export default function RegistrationForm({
+  isRightPanelOpen = true,
+  onToggleRightPanel,
+}: RegistrationFormProps) {
   const [details, setDetails] = useState("");
+  const [activeMode, setActiveMode] = useState<"understanding" | "training">(
+    "understanding",
+  );
   const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
   const [links, setLinks] = useState<LinkItem[]>([]);
 
@@ -344,13 +509,32 @@ export default function RegistrationForm() {
   // コピー完了時のフィードバック用ステート
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const [techUnderstanding, setTechUnderstanding] =
+    useState<TechnicalUnderstanding>({
+      why: "",
+      problem: "",
+      mechanism: "",
+      trigger: "",
+      without: "",
+      demerit: "",
+      situation: "",
+      analogy: "",
+      difference: "",
+    });
+  const [thinkingTraining, setThinkingTraining] =
+    useState<ThinkingTraining>(defaultTrainingData);
+
   // 1. ローカルストレージからの復元
   useEffect(() => {
     const savedData = localStorage.getItem("draft_idea_stock");
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData) as DraftData;
+        // 詳細
         if (parsed.details) setDetails(parsed.details);
+
+        if (parsed.technicalUnderstanding)
+          setTechUnderstanding(parsed.technicalUnderstanding);
         if (parsed.unknownWords) setUnknownWords(parsed.unknownWords);
         if (parsed.links) setLinks(parsed.links);
         if (parsed.ownWords) setOwnWords(parsed.ownWords);
@@ -370,6 +554,15 @@ export default function RegistrationForm() {
       "draft_idea_stock",
       JSON.stringify({ ...currentData, ...newData }),
     );
+  };
+
+  const handleTechUnderstandingChange = (
+    field: keyof TechnicalUnderstanding,
+    value: string,
+  ) => {
+    const newData = { ...techUnderstanding, [field]: value };
+    setTechUnderstanding(newData);
+    saveToStorage({ technicalUnderstanding: newData });
   };
 
   // 3. 各入力ハンドラー
@@ -481,6 +674,9 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
     const payload: StockIdeaInput = {
       details,
+      technicalUnderstanding: JSON.stringify(techUnderstanding),
+      thinkingTraining: JSON.stringify(thinkingTraining),
+      activeMode: JSON.stringify(activeMode),
       unknownWords: JSON.stringify(unknownWords),
       relatedLinks: JSON.stringify(links), // 登録された全リンクをJSON化して送信
       ownWords,
@@ -504,8 +700,42 @@ export default function RegistrationForm() {
   };
 
   return (
-    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-5">
-      <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
+    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
+        {onToggleRightPanel && (
+          <Button
+            onClick={onToggleRightPanel}
+            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white/20 hover:text-white"
+          >
+            {isRightPanelOpen
+              ? "検索・確認パネルを隠す"
+              : "検索・確認パネルを開く"}
+          </Button>
+        )}
+      </div>
+
+      {/* タブ切り替えUI */}
+      <div className="flex gap-2 border-b border-white/10 pb-2">
+        <button
+          onClick={() => {
+            setActiveMode("understanding");
+            saveToStorage({ activeMode: "understanding" });
+          }}
+          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+        >
+          理解モード（技術・概念）
+        </button>
+        <button
+          onClick={() => {
+            setActiveMode("training");
+            saveToStorage({ activeMode: "training" });
+          }}
+          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+        >
+          思考トレーニング
+        </button>
+      </div>
 
       {/* 詳細の記載 */}
       <div className="flex flex-col gap-2">
@@ -514,9 +744,29 @@ export default function RegistrationForm() {
           value={details}
           onChange={handleDetailsChange}
           placeholder="ここに詳細を記載します..."
-          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
+
+      {/* 動的フォームの出し分け */}
+      {activeMode === "understanding" ? (
+        <TechFrameworkForm
+          data={techUnderstanding}
+          onChange={(field, value) => {
+            const newData = { ...techUnderstanding, [field]: value };
+            setTechUnderstanding(newData);
+            saveToStorage({ technicalUnderstanding: newData });
+          }}
+        />
+      ) : (
+        <TrainingFrameworkForm
+          data={thinkingTraining}
+          onChange={(newData) => {
+            setThinkingTraining(newData);
+            saveToStorage({ thinkingTraining: newData });
+          }}
+        />
+      )}
 
       {/* わからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
@@ -524,12 +774,6 @@ export default function RegistrationForm() {
           <label className="font-semibold text-white">
             わからない単語と調査した結果
           </label>
-          <button
-            onClick={addUnknownWord}
-            className="text-xs text-blue-400 hover:underline"
-          >
-            ＋ 行を追加
-          </button>
         </div>
         {unknownWords.map((item, index) => (
           <div key={index} className="flex gap-2">
@@ -538,7 +782,7 @@ export default function RegistrationForm() {
               placeholder="単語"
               value={item.word}
               onChange={(e) => updateUnknownWord(index, "word", e.target.value)}
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
             />
             <input
               type="text"
@@ -547,10 +791,18 @@ export default function RegistrationForm() {
               onChange={(e) =>
                 updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
             />
           </div>
         ))}
+        <div className="flex items-center justify-end">
+          <Button
+            onClick={addUnknownWord}
+            className="bg-primary hover:bg-primary text-primary-foreground gap-2"
+          >
+            追加
+          </Button>
+        </div>
       </div>
 
       {/* ★ 関連リンク（今回の改修箇所） */}
@@ -566,7 +818,7 @@ export default function RegistrationForm() {
             placeholder="リンクのメモ"
             value={linkMemo}
             onChange={(e) => setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           {/* 既存の特殊コピペ機能は、URL欄にペーストされたときに発火させる */}
           <input
@@ -575,14 +827,14 @@ export default function RegistrationForm() {
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             onPaste={handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
             value={linkTitle}
             onChange={(e) => setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
@@ -615,14 +867,14 @@ export default function RegistrationForm() {
                       {link.title || link.url}
                     </a>
                     {link.memo && (
-                      <p className="mt-1 text-xs text-white/60">{link.memo}</p>
+                      <p className="mt-1 text-xs text-white">{link.memo}</p>
                     )}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleCopySpecialFormat(link, index)}
-                      className="rounded border border-white/20 bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 hover:text-white"
+                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 hover:text-white"
                       title="<メモ, URL, タイトル>の形式でコピー"
                     >
                       {copiedIndex === index ? "コピー完了!" : "特殊コピペ"}
@@ -630,7 +882,7 @@ export default function RegistrationForm() {
                     <button
                       type="button"
                       onClick={() => handleRemoveLink(index)}
-                      className="rounded text-white/40 transition-colors hover:text-red-400"
+                      className="rounded text-white transition-colors hover:text-red-400"
                       title="削除"
                     >
                       ✕
@@ -649,7 +901,7 @@ export default function RegistrationForm() {
         <textarea
           value={ownWords}
           onChange={handleOwnWordsChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
@@ -659,7 +911,7 @@ export default function RegistrationForm() {
         <textarea
           value={metaphor}
           onChange={handleMetaphorChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white/90 focus:border-white/30 focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
@@ -673,7 +925,7 @@ export default function RegistrationForm() {
             value={categoryInput}
             onChange={(e) => setCategoryInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addCategory(categoryInput)}
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white/90 focus:border-white/30 focus:outline-none"
+            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
           />
           <button
             onClick={() => addCategory(categoryInput)}
@@ -728,19 +980,13 @@ FILE: src/features/dashboard/components/search-panel.tsx
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { StockIdea } from "@/lib/gas-api";
+import { ParsedStockIdea, TechnicalUnderstanding } from "../types";
 import { fetchStockIdeas } from "../api/gas-client";
 import IdeaDetailModal from "./idea-detail-modal";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
 
 import { Button } from "@/components/ui/button";
-
-type ParsedStockIdea = StockIdea & {
-  parsedCategories: string[];
-  parsedUnknownWords: { word: string; result: string }[];
-  parsedRelatedLinks: { memo: string; url: string; title: string }[];
-};
 
 /**
  * JSON文字列を安全にパースするためのヘルパー関数
@@ -779,6 +1025,21 @@ export default function SearchPanel() {
         const fetchedIdeas = await fetchStockIdeas();
         const parsedIdeas: ParsedStockIdea[] = fetchedIdeas.map((idea) => ({
           ...idea,
+          // 技術理解フレームワークのパース
+          parsedTechnicalUnderstanding: safeParse<TechnicalUnderstanding>(
+            idea.technicalUnderstanding,
+            {
+              why: "",
+              problem: "",
+              analogy: "",
+              mechanism: "",
+              trigger: "",
+              without: "",
+              demerit: "",
+              situation: "",
+              difference: "",
+            },
+          ),
           parsedCategories: safeParse<string[]>(idea.categories, []),
           parsedUnknownWords: safeParse<{ word: string; result: string }[]>(
             idea.unknownWords,
@@ -1028,20 +1289,123 @@ export default function SearchPanel() {
 ================================================
 FILE: src/features/dashboard/components/stock-dashboard.tsx
 ================================================
+"use client";
+
+import { useState } from "react";
 import RegistrationForm from "./registration-form";
 import SearchPanel from "./search-panel";
 
 export default function StockDashboard() {
+  // 右ペイン（検索パネル）の開閉状態を管理。初期状態は開いている（true）
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+
+  const toggleRightPanel = () => {
+    setIsRightPanelOpen((prev) => !prev);
+  };
+
   return (
-    <div className="flex h-full w-full gap-4 p-4">
-      {/* 左側：登録パネル（配置の指定） */}
-      <div className="flex w-1/2 flex-col">
-        <RegistrationForm />
+    <div className="bg-background text-foreground flex h-screen w-full overflow-hidden">
+      {/* 左側：登録パネル（右ペインが閉じている時は w-full で画面いっぱいに広がる） */}
+      <div
+        className={`h-full overflow-y-auto transition-all duration-300 ${
+          isRightPanelOpen ? "w-1/2 border-r border-white/10" : "w-full"
+        }`}
+      >
+        <RegistrationForm
+          isRightPanelOpen={isRightPanelOpen}
+          onToggleRightPanel={toggleRightPanel}
+        />
       </div>
 
-      {/* 右側：検索・確認パネル（配置の指定） */}
-      <div className="flex w-1/2 flex-col">
-        <SearchPanel />
+      {/* 右側：確認・検索パネル（isRightPanelOpenがtrueの時のみレンダリング） */}
+      {isRightPanelOpen && (
+        <div className="h-full w-1/2 overflow-y-auto p-4 transition-all duration-300">
+          <SearchPanel />
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+================================================
+FILE: src/features/dashboard/components/tech-framework-form.tsx
+================================================
+"use client";
+
+import { TechnicalUnderstanding } from "../types";
+
+interface Props {
+  data: TechnicalUnderstanding;
+  onChange: (field: keyof TechnicalUnderstanding, value: string) => void;
+}
+
+export default function TechFrameworkForm({ data, onChange }: Props) {
+  const fields: {
+    key: keyof TechnicalUnderstanding;
+    label: string;
+    color: string;
+  }[] = [
+    { key: "why", label: "Why (なぜ存在するのか？)", color: "text-white" },
+    {
+      key: "problem",
+      label: "Problem (何を解決するのか？)",
+      color: "text-white",
+    },
+    {
+      key: "difference",
+      label: "Difference (他の類似概念との決定的な違いは？)",
+      color: "text-white",
+    },
+    {
+      key: "mechanism",
+      label: "Mechanism (内部で何が起きているのか？)",
+      color: "text-white",
+    },
+    { key: "trigger", label: "Trigger (いつ動くのか？)", color: "text-white" },
+    {
+      key: "without",
+      label: "Without (無かったら何が困るのか？)",
+      color: "text-white",
+    },
+    {
+      key: "demerit",
+      label: "Demerit(それを使うデメリット)",
+      color: "text-white",
+    },
+    {
+      key: "situation",
+      label: "Situation (どんな場面で使うべきか？)",
+      color: "text-white",
+    },
+    {
+      key: "analogy",
+      label: "Analogy (何に似ているのか？)",
+      color: "text-white",
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3 rounded border border-white/10 bg-[#1a1a1c] p-4">
+      <h3 className="text-sm font-bold text-white/80">
+        理解フレームワーク（技術・概念）
+      </h3>
+      <p className="mb-2 text-white">
+        ※ 関連しない項目は空欄のままスキップしてください。
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {fields.map(({ key, label, color }) => (
+          <div key={key} className="flex flex-col gap-1">
+            <label className={`text-xs font-bold ${color}`}>{label}</label>
+            <input
+              type="text"
+              value={data[key]}
+              onChange={(e) => onChange(key, e.target.value)}
+              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1050,152 +1414,218 @@ export default function StockDashboard() {
 
 
 ================================================
-FILE: src/features/dashboard/components/stock-form.tsx
+FILE: src/features/dashboard/components/training-framework-form.tsx
 ================================================
 "use client";
 
-import { useState, useEffect, ClipboardEvent, ChangeEvent } from "react";
-import { RelatedLink } from "../types";
-import { createStockIdea } from "../api/gas-client";
+import { ThinkingTraining } from "../types";
 
-interface StockFormProps {
-  onComplete: () => void;
+interface Props {
+  data: ThinkingTraining;
+  onChange: (newData: ThinkingTraining) => void;
 }
 
-export function StockForm({ onComplete }: StockFormProps) {
-  const [details, setDetails] = useState("");
-  const [linkInput, setLinkInput] = useState("");
-  const [links, setLinks] = useState<RelatedLink[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // ローカルストレージからの復元
-  useEffect(() => {
-    const saved = localStorage.getItem("draft_idea_stock");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.details) setDetails(parsed.details);
-        if (parsed.links) setLinks(parsed.links);
-      } catch (error) {
-        console.error("Storage parse error", error);
-      }
-    }
-  }, []);
-
-  // 入力時の自動保存
-  const saveToStorage = (newData: Record<string, unknown>) => {
-    const currentData = localStorage.getItem("draft_idea_stock");
-    const current = currentData ? JSON.parse(currentData) : {};
-    localStorage.setItem(
-      "draft_idea_stock",
-      JSON.stringify({ ...current, ...newData }),
-    );
-  };
-
-  const handleDetailsChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setDetails(value);
-    saveToStorage({ details: value });
-  };
-
-  // 特殊コピペの処理
-  const handleLinkPaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    const pastedText = e.clipboardData.getData("text");
-    const specialFormatRegex = /<(.*?),\s*(https?:\/\/[^\s,>]+),\s*(.*?)>/;
-    const match = pastedText.match(specialFormatRegex);
-
-    if (match) {
-      e.preventDefault();
-      const newLink = {
-        memo: match[1].trim(),
-        url: match[2].trim(),
-        title: match[3].trim(),
-      };
-      const updatedLinks = [...links, newLink];
-      setLinks(updatedLinks);
-      saveToStorage({ links: updatedLinks });
-      setLinkInput("");
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!details.trim()) return;
-
-    setIsSubmitting(true);
-    const success = await createStockIdea({
-      details,
-      unknownWords: "[]",
-      relatedLinks: JSON.stringify(links),
-      ownWords: "",
-      metaphor: "",
-      categories: "[]",
-    });
-
-    if (success) {
-      localStorage.removeItem("draft_idea_stock");
-      setDetails("");
-      setLinks([]);
-      onComplete(); // 成功時に親コンポーネントのリストを再取得
+export default function TrainingFrameworkForm({ data, onChange }: Props) {
+  const updateNested = (
+    section: keyof ThinkingTraining,
+    field: string,
+    value: string | string[],
+    index?: number,
+  ) => {
+    const newData = { ...data };
+    if (
+      index !== undefined &&
+      Array.isArray((newData[section] as any)[field])
+    ) {
+      (newData[section] as any)[field][index] = value;
     } else {
-      alert("データの送信に失敗しました。");
+      (newData[section] as any)[field] = value;
     }
-    setIsSubmitting(false);
+    onChange(newData);
+  };
+
+  const updateRoot = (field: keyof ThinkingTraining, value: string) => {
+    onChange({ ...data, [field]: value });
   };
 
   return (
-    <div className="custom-scrollbar flex h-full flex-col overflow-y-auto p-5">
-      <h2 className="mb-5 text-xl font-bold">アイデア・メモの登録</h2>
+    <div className="flex flex-col gap-6 rounded border border-white bg-[#1a1a1c] p-4">
+      <h3 className="font-bold text-white">思考トレーニングモード</h3>
+      <p className="-mt-4 text-white">
+        ※ 関連しない項目は空欄のままスキップしてください。
+      </p>
 
-      <div className="mb-4 flex flex-col gap-2">
-        <label className="text-sm font-semibold text-white/80">
-          詳細の記載
-        </label>
-        <textarea
-          value={details}
-          onChange={handleDetailsChange}
-          placeholder="ここに詳細を記載します..."
-          rows={4}
-          className="custom-scrollbar w-full rounded-lg border border-white bg-black/40 p-3 text-sm focus:border-blue-500 focus:outline-none"
-        />
-      </div>
-
-      <div className="mb-4 flex flex-col gap-2">
-        <label className="text-sm font-semibold text-white/80">
-          関連リンク（課題対応用コピペ対応）
-        </label>
+      {/* 導入 */}
+      <div className="grid grid-cols-1 gap-3">
+        <label className="text-white">テーマ</label>
         <input
           type="text"
-          value={linkInput}
-          onChange={(e) => setLinkInput(e.target.value)}
-          onPaste={handleLinkPaste}
-          placeholder="<メモ, URL, タイトル> または URL をペースト"
-          className="w-full rounded-lg border border-white bg-black/40 p-3 text-sm focus:border-blue-500 focus:outline-none"
+          value={data.theme}
+          onChange={(e) => updateRoot("theme", e.target.value)}
+          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
         />
-        {links.length > 0 && (
-          <ul className="mt-2 flex flex-col gap-2">
-            {links.map((link, idx) => (
-              <li
-                key={idx}
-                className="rounded border border-white/10 bg-white/5 p-2 text-xs"
-              >
-                <span className="font-bold text-blue-400">{link.title}</span>
-                <span className="mx-2">-</span>
-                <span>{link.memo}</span>
-                <div className="mt-1 text-white/50">{link.url}</div>
-              </li>
-            ))}
-          </ul>
-        )}
+        <label className="text-white">今日の論点</label>
+        <input
+          type="text"
+          value={data.issue}
+          onChange={(e) => updateRoot("issue", e.target.value)}
+          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+        />
+        <label className="text-white">今回は考えないこと</label>
+        <input
+          type="text"
+          value={data.exclusion}
+          onChange={(e) => updateRoot("exclusion", e.target.value)}
+          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+        />
       </div>
 
-      <div className="mt-auto flex justify-end pt-4">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !details.trim()}
-          className="rounded-xl bg-blue-600 px-8 py-3 font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
-        >
-          {isSubmitting ? "送信中..." : "完了"}
-        </button>
+      {/* 5W1H */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <h4 className="col-span-full font-bold text-white">5W1H</h4>
+        {Object.entries({
+          when: "When (どんな時に問題になるか)",
+          where: "Where (どんな場面・環境で関係するか)",
+          what: "What (何が起きている/重要か)",
+          who: "Who (誰に関係があるか)",
+          why: "Why (なぜ考える必要があるか)",
+          how: "How (どう向き合えるか)",
+        }).map(([k, label]) => (
+          <div key={k} className="flex flex-col gap-1">
+            <label className="text-white">{label}</label>
+            <input
+              type="text"
+              value={(data.fiveW1H as any)[k]}
+              onChange={(e) => updateNested("fiveW1H", k, e.target.value)}
+              className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Why So / So What */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <h4 className="font-bold text-white">Why So? (なぜそうなる？)</h4>
+          <input
+            type="text"
+            placeholder="問い"
+            value={data.whySo.question}
+            onChange={(e) => updateNested("whySo", "question", e.target.value)}
+            className="mb-1 w-full rounded border border-white bg-[#121214] p-2 text-white"
+          />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <input
+              key={i}
+              type="text"
+              placeholder={`深掘り ${i + 1}`}
+              value={data.whySo.answers[i]}
+              onChange={(e) =>
+                updateNested("whySo", "answers", e.target.value, i)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+            />
+          ))}
+        </div>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-bold text-white">
+            So What? (それってどういうこと？)
+          </h4>
+          <input
+            type="text"
+            placeholder="問い"
+            value={data.soWhat.question}
+            onChange={(e) => updateNested("soWhat", "question", e.target.value)}
+            className="mb-1 w-full rounded border border-white bg-[#121214] p-2 text-white"
+          />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <input
+              key={i}
+              type="text"
+              placeholder={`深掘り ${i + 1}`}
+              value={data.soWhat.answers[i]}
+              onChange={(e) =>
+                updateNested("soWhat", "answers", e.target.value, i)
+              }
+              className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 共通点・構造 */}
+      <div className="flex flex-col gap-3">
+        <h4 className="font-bold text-white">共通点の抽出</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            placeholder="対象A"
+            value={data.commonalities.targetA}
+            onChange={(e) =>
+              updateNested("commonalities", "targetA", e.target.value)
+            }
+            className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+          />
+          <input
+            type="text"
+            placeholder="対象B"
+            value={data.commonalities.targetB}
+            onChange={(e) =>
+              updateNested("commonalities", "targetB", e.target.value)
+            }
+            className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+          />
+        </div>
+        <textarea
+          placeholder="共通点 (箇条書きで記載)"
+          value={data.commonalities.points.join("\n")}
+          onChange={(e) =>
+            updateNested("commonalities", "points", e.target.value.split("\n"))
+          }
+          className="h-24 w-full resize-none rounded border border-white bg-[#121214] p-2 text-white"
+        />
+        <input
+          type="text"
+          placeholder="共通構造"
+          value={data.commonalities.structure}
+          onChange={(e) =>
+            updateNested("commonalities", "structure", e.target.value)
+          }
+          className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+        />
+      </div>
+
+      {/* 論理チェックと一文結論 */}
+      <div className="flex flex-col gap-3">
+        <h4 className="font-bold text-white">論理チェック & 結論</h4>
+        {Object.entries({
+          conclusion: "結論",
+          reason: "理由",
+          example: "具体例",
+          meaning: "つまり",
+        }).map(([k, label]) => (
+          <div key={k} className="flex items-center gap-2">
+            <label className="w-16 text-white">{label}</label>
+            <input
+              type="text"
+              value={(data.logicCheck as any)[k]}
+              onChange={(e) => updateNested("logicCheck", k, e.target.value)}
+              className="flex-1 rounded border border-white bg-[#121214] p-2 text-white"
+            />
+          </div>
+        ))}
+        <textarea
+          placeholder="一文の結論"
+          value={data.oneSentence}
+          onChange={(e) => updateRoot("oneSentence", e.target.value)}
+          className="mt-2 h-16 w-full resize-none rounded border border-white bg-[#121214] p-2 font-bold text-white"
+        />
+        <textarea
+          placeholder="今日の発見"
+          value={data.discovery}
+          onChange={(e) => updateRoot("discovery", e.target.value)}
+          className="h-16 w-full resize-none rounded border border-white bg-[#121214] p-2 text-white"
+        />
       </div>
     </div>
   );
@@ -1206,24 +1636,118 @@ export function StockForm({ onComplete }: StockFormProps) {
 ================================================
 FILE: src/features/dashboard/types/index.ts
 ================================================
-export interface StockIdea {
-  id: number;
-  details: string;
-  unknownWords: string; // JSON
-  relatedLinks: string; // JSON
-  ownWords: string;
-  metaphor: string;
-  categories: string; // JSON
-  isUsed: boolean;
-  draftUrl: string;
-  createdAt: string;
-  updatedAt: string;
+export interface TechnicalUnderstanding {
+  why: string;
+  problem: string;
+  analogy: string;
+  mechanism: string;
+  trigger: string;
+  without: string;
+  demerit: string;
+  situation: string;
+  difference: string;
 }
 
+// 思考トレーニング用の型定義（テンプレートに完全準拠）
+export interface ThinkingTraining {
+  theme: string;
+  issue: string;
+  exclusion: string;
+  fiveW1H: {
+    when: string;
+    where: string;
+    what: string;
+    who: string;
+    why: string;
+    how: string;
+  };
+  otherPerspective: { a: string; b: string; c: string; common: string };
+  ownOpinion: { op1: string; op2: string; op3: string; common: string };
+  whySo: { question: string; answers: string[] }; // 5つの問い
+  soWhat: { question: string; answers: string[] }; // 5つの問い
+  goodLineLog: string;
+  commonalities: {
+    targetA: string;
+    targetB: string;
+    points: string[];
+    structure: string;
+  }; // 10個のポイント
+  concreteToAbstract: { concrete: string; abstract: string };
+  abstractToConcrete: { concrete: string; abstract: string };
+  analogy: { summary: string; analogy: string; reason: string };
+  logicCheck: {
+    conclusion: string;
+    reason: string;
+    example: string;
+    meaning: string;
+  };
+  oneSentence: string;
+  discovery: string;
+}
+
+export interface UnknownWord {
+  word: string;
+  result: string;
+}
+
+export interface DraftData {
+  details?: string;
+  technicalUnderstanding?: TechnicalUnderstanding; // 追加
+  thinkingTraining: ThinkingTraining; // M列 (思考トレーニングモード) ※新規
+  activeMode: string; // N列 ("understanding" or "training") ※新規
+  unknownWords?: UnknownWord[];
+  links?: LinkItem[];
+  ownWords?: string;
+  metaphor?: string;
+  categories?: string[];
+}
+
+export interface LinkItem {
+  memo: string;
+  url: string;
+  title: string;
+}
 export interface RelatedLink {
   memo: string;
   url: string;
   title: string;
 }
 
+export interface StockIdea {
+  id: number;
+  details: string;
+  technicalUnderstanding: string; // L列 (理解モード)
+  thinkingTraining: string; // M列 (思考トレーニングモード) ※新規
+  activeMode: string; // N列 ("understanding" or "training") ※新規
+  unknownWords: string; // JSON文字列
+  relatedLinks: string; // JSON文字列
+  ownWords: string;
+  metaphor: string;
+  categories: string; // JSON文字列
+  isUsed: boolean;
+  draftUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
+// 登録用に自動生成項目を除外した型
+export type StockIdeaInput = Omit<
+  StockIdea,
+  "id" | "isUsed" | "draftUrl" | "createdAt" | "updatedAt"
+>;
+
+export type ParsedStockIdea = StockIdea & {
+  parsedTechnicalUnderstanding: TechnicalUnderstanding;
+  parsedCategories: string[];
+  parsedUnknownWords: { word: string; result: string }[];
+  parsedRelatedLinks: { memo: string; url: string; title: string }[];
+};
+
+export interface IdeaDetailModalProps {
+  idea: StockIdea;
+  onClose: () => void;
+}
+
+export interface StockFormProps {
+  onComplete: () => void;
+}

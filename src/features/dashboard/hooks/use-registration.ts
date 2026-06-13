@@ -1,0 +1,267 @@
+import { useState, useEffect } from "react";
+import { addStockIdea } from "../api/gas-client";
+import {
+  StockIdeaInput,
+  TechnicalUnderstanding,
+  ThinkingTraining,
+  UnknownWord,
+  LinkItem,
+  DraftData,
+} from "../types";
+
+// 思考トレーニングの初期値テンプレート
+const defaultTrainingData: ThinkingTraining = {
+  theme: "",
+  issue: "",
+  exclusion: "",
+  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
+  otherPerspective: { a: "", b: "", c: "", common: "" },
+  ownOpinion: { op1: "", op2: "", op3: "", common: "" },
+  whySo: { question: "", answers: ["", "", "", "", ""] },
+  soWhat: { question: "", answers: ["", "", "", "", ""] },
+  goodLineLog: "",
+  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
+  concreteToAbstract: { concrete: "", abstract: "" },
+  abstractToConcrete: { concrete: "", abstract: "" },
+  analogy: { summary: "", analogy: "", reason: "" },
+  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
+  oneSentence: "",
+  discovery: "",
+};
+
+export function useRegistration() {
+  // === 1. ステート管理 ===
+  const [details, setDetails] = useState("");
+  const [activeMode, setActiveMode] = useState<"understanding" | "training">(
+    "understanding",
+  );
+  const [techUnderstanding, setTechUnderstanding] =
+    useState<TechnicalUnderstanding>({
+      why: "",
+      problem: "",
+      mechanism: "",
+      trigger: "",
+      without: "",
+      demerit: "",
+      situation: "",
+      analogy: "",
+      difference: "",
+    });
+  const [thinkingTraining, setThinkingTraining] =
+    useState<ThinkingTraining>(defaultTrainingData);
+  const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [linkMemo, setLinkMemo] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [ownWords, setOwnWords] = useState("");
+  const [metaphor, setMetaphor] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryInput, setCategoryInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // === 2. ストレージ（保存・呼び出し）ロジック ===
+  useEffect(() => {
+    const savedData = localStorage.getItem("draft_idea_stock");
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData) as DraftData;
+        if (parsed.details) setDetails(parsed.details);
+        if (parsed.activeMode)
+          setActiveMode(parsed.activeMode as "understanding" | "training");
+        if (parsed.technicalUnderstanding)
+          setTechUnderstanding(parsed.technicalUnderstanding);
+        if (parsed.thinkingTraining)
+          setThinkingTraining(parsed.thinkingTraining);
+        if (parsed.unknownWords) setUnknownWords(parsed.unknownWords);
+        if (parsed.links) setLinks(parsed.links);
+        if (parsed.ownWords) setOwnWords(parsed.ownWords);
+        if (parsed.metaphor) setMetaphor(parsed.metaphor);
+        if (parsed.categories) setCategories(parsed.categories);
+      } catch (error) {
+        console.error("Failed to parse draft data", error);
+      }
+    }
+  }, []);
+
+  const saveToStorage = (newData: Partial<DraftData>) => {
+    const currentDataRaw = localStorage.getItem("draft_idea_stock");
+    const currentData = currentDataRaw ? JSON.parse(currentDataRaw) : {};
+    localStorage.setItem(
+      "draft_idea_stock",
+      JSON.stringify({ ...currentData, ...newData }),
+    );
+  };
+
+  // === 3. 各種ハンドラー（UIからの操作） ===
+  const handleTechUnderstandingChange = (
+    field: keyof TechnicalUnderstanding,
+    value: string,
+  ) => {
+    const newData = { ...techUnderstanding, [field]: value };
+    setTechUnderstanding(newData);
+    saveToStorage({ technicalUnderstanding: newData });
+  };
+
+  const addUnknownWord = () => {
+    const newWords = [...unknownWords, { word: "", result: "" }];
+    setUnknownWords(newWords);
+    saveToStorage({ unknownWords: newWords });
+  };
+
+  const updateUnknownWord = (
+    index: number,
+    field: keyof UnknownWord,
+    value: string,
+  ) => {
+    const newWords = [...unknownWords];
+    newWords[index][field] = value;
+    setUnknownWords(newWords);
+    saveToStorage({ unknownWords: newWords });
+  };
+
+  const addCategory = (cat: string) => {
+    const trimmed = cat.trim();
+    if (trimmed && !categories.includes(trimmed)) {
+      const newCategories = [...categories, trimmed];
+      setCategories(newCategories);
+      saveToStorage({ categories: newCategories });
+    }
+    setCategoryInput("");
+  };
+
+  const handleLinkPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData("text");
+    const specialFormatRegex = /<(.*?),\s*(https?:\/\/[^\s,>]+),\s*(.*?)>/;
+    const match = pastedText.match(specialFormatRegex);
+    if (match) {
+      e.preventDefault();
+      const newLinks = [
+        ...links,
+        { memo: match[1].trim(), url: match[2].trim(), title: match[3].trim() },
+      ];
+      setLinks(newLinks);
+      saveToStorage({ links: newLinks });
+    }
+  };
+
+  const handleAddLink = () => {
+    const url = linkUrl.trim();
+    if (!url) return;
+    const newLinks = [
+      ...links,
+      { memo: linkMemo.trim(), url, title: linkTitle.trim() },
+    ];
+    setLinks(newLinks);
+    saveToStorage({ links: newLinks });
+    setLinkMemo("");
+    setLinkUrl("");
+    setLinkTitle("");
+  };
+
+  const handleCopySpecialFormat = (link: LinkItem, index: number) => {
+    navigator.clipboard
+      .writeText(`<${link.memo}, ${link.url}, ${link.title}>`)
+      .then(() => {
+        setCopiedIndex(index);
+        setTimeout(() => setCopiedIndex(null), 2000);
+      });
+  };
+
+  const handleRemoveLink = (index: number) => {
+    const newLinks = links.filter((_, i) => i !== index);
+    setLinks(newLinks);
+    saveToStorage({ links: newLinks });
+  };
+
+  // === 4. 送信処理（API通信） ===
+  const handleComplete = async () => {
+    if (!details.trim()) return;
+    setIsSubmitting(true);
+    const payload: StockIdeaInput = {
+      details,
+      technicalUnderstanding: JSON.stringify(techUnderstanding),
+      thinkingTraining: JSON.stringify(thinkingTraining),
+      activeMode: JSON.stringify(activeMode),
+      unknownWords: JSON.stringify(unknownWords),
+      relatedLinks: JSON.stringify(links),
+      ownWords,
+      metaphor,
+      categories: JSON.stringify(categories),
+    };
+
+    const res = await addStockIdea(payload);
+    if (res) {
+      localStorage.removeItem("draft_idea_stock");
+      setDetails("");
+      setUnknownWords([]);
+      setLinks([]);
+      setOwnWords("");
+      setMetaphor("");
+      setCategories([]);
+      setTechUnderstanding({
+        why: "",
+        problem: "",
+        mechanism: "",
+        trigger: "",
+        without: "",
+        demerit: "",
+        situation: "",
+        analogy: "",
+        difference: "",
+      });
+      setThinkingTraining(defaultTrainingData);
+      alert("登録が完了しました");
+    } else {
+      alert("登録に失敗しました");
+    }
+    setIsSubmitting(false);
+  };
+
+  // === UI側で必要な情報だけを返す ===
+  return {
+    state: {
+      details,
+      activeMode,
+      techUnderstanding,
+      thinkingTraining,
+      unknownWords,
+      links,
+      linkMemo,
+      linkUrl,
+      linkTitle,
+      ownWords,
+      metaphor,
+      categories,
+      categoryInput,
+      isSubmitting,
+      copiedIndex,
+    },
+    setters: {
+      setDetails,
+      setActiveMode,
+      setLinkMemo,
+      setLinkUrl,
+      setLinkTitle,
+      setOwnWords,
+      setMetaphor,
+      setCategories,
+      setCategoryInput,
+      setThinkingTraining,
+    },
+    handlers: {
+      saveToStorage,
+      handleTechUnderstandingChange,
+      addUnknownWord,
+      updateUnknownWord,
+      addCategory,
+      setCategories,
+      handleLinkPaste,
+      handleAddLink,
+      handleCopySpecialFormat,
+      handleRemoveLink,
+      handleComplete,
+    },
+  };
+}

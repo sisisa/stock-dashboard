@@ -7,20 +7,7 @@ import {
   ThinkingTraining,
 } from "../types";
 
-/**
- * 外部から渡されるJSON文字列を安全にパースするためのヘルパー
- * 理由: GAS等の外部データは型が完全に保証されないため、手動で不正な文字が入った際の
- *       JSON.parse エラーによる画面（UI）全体のクラッシュを防ぐための防波堤として設置。
- */
-function safeParse<T>(value: string, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch (error) {
-    console.error("JSON parse error:", error);
-    return fallback;
-  }
-}
+import { safeParse } from "../utils/parse";
 
 export default function IdeaDetailModal({
   idea,

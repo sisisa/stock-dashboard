@@ -1,42 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { addStockIdea } from "../api/gas-client";
-
 import { Button } from "@/components/ui/button";
-
-import {
-  StockIdeaInput,
-  TechnicalUnderstanding,
-  ThinkingTraining,
-  UnknownWord,
-  LinkItem,
-  DraftData,
-  RelatedLink,
-} from "../types";
-
 import TechFrameworkForm from "./tech-framework-form";
 import TrainingFrameworkForm from "./training-framework-form";
+import { useRegistration } from "../hooks/use-registration"; // ← 新しく作ったフックを読み込む
 
-// 思考トレーニングの初期値テンプレート
-const defaultTrainingData: ThinkingTraining = {
-  theme: "",
-  issue: "",
-  exclusion: "",
-  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
-  otherPerspective: { a: "", b: "", c: "", common: "" },
-  ownOpinion: { op1: "", op2: "", op3: "", common: "" },
-  whySo: { question: "", answers: ["", "", "", "", ""] },
-  soWhat: { question: "", answers: ["", "", "", "", ""] },
-  goodLineLog: "",
-  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
-  concreteToAbstract: { concrete: "", abstract: "" },
-  abstractToConcrete: { concrete: "", abstract: "" },
-  analogy: { summary: "", analogy: "", reason: "" },
-  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
-  oneSentence: "",
-  discovery: "",
-};
 interface RegistrationFormProps {
   isRightPanelOpen?: boolean;
   onToggleRightPanel?: () => void;
@@ -46,217 +14,8 @@ export default function RegistrationForm({
   isRightPanelOpen = true,
   onToggleRightPanel,
 }: RegistrationFormProps) {
-  const [details, setDetails] = useState("");
-  const [activeMode, setActiveMode] = useState<"understanding" | "training">(
-    "understanding",
-  );
-  const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
-  const [links, setLinks] = useState<LinkItem[]>([]);
-
-  // リンク入力用のステート（3つに分割）
-  const [linkMemo, setLinkMemo] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
-  const [linkTitle, setLinkTitle] = useState("");
-
-  const [ownWords, setOwnWords] = useState("");
-  const [metaphor, setMetaphor] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoryInput, setCategoryInput] = useState("");
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // コピー完了時のフィードバック用ステート
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-  const [techUnderstanding, setTechUnderstanding] =
-    useState<TechnicalUnderstanding>({
-      why: "",
-      problem: "",
-      mechanism: "",
-      trigger: "",
-      without: "",
-      demerit: "",
-      situation: "",
-      analogy: "",
-      difference: "",
-    });
-  const [thinkingTraining, setThinkingTraining] =
-    useState<ThinkingTraining>(defaultTrainingData);
-
-  // 1. ローカルストレージからの復元
-  useEffect(() => {
-    const savedData = localStorage.getItem("draft_idea_stock");
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData) as DraftData;
-        // 詳細
-        if (parsed.details) setDetails(parsed.details);
-
-        if (parsed.technicalUnderstanding)
-          setTechUnderstanding(parsed.technicalUnderstanding);
-        if (parsed.unknownWords) setUnknownWords(parsed.unknownWords);
-        if (parsed.links) setLinks(parsed.links);
-        if (parsed.ownWords) setOwnWords(parsed.ownWords);
-        if (parsed.metaphor) setMetaphor(parsed.metaphor);
-        if (parsed.categories) setCategories(parsed.categories);
-      } catch (error) {
-        console.error("Failed to parse draft data", error);
-      }
-    }
-  }, []);
-
-  // 2. 入力ごとの一時保存ロジック
-  const saveToStorage = (newData: Partial<DraftData>) => {
-    const currentDataRaw = localStorage.getItem("draft_idea_stock");
-    const currentData = currentDataRaw ? JSON.parse(currentDataRaw) : {};
-    localStorage.setItem(
-      "draft_idea_stock",
-      JSON.stringify({ ...currentData, ...newData }),
-    );
-  };
-
-  const handleTechUnderstandingChange = (
-    field: keyof TechnicalUnderstanding,
-    value: string,
-  ) => {
-    const newData = { ...techUnderstanding, [field]: value };
-    setTechUnderstanding(newData);
-    saveToStorage({ technicalUnderstanding: newData });
-  };
-
-  // 3. 各入力ハンドラー
-  const handleDetailsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDetails(e.target.value);
-    saveToStorage({ details: e.target.value });
-  };
-
-  const handleOwnWordsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setOwnWords(e.target.value);
-    saveToStorage({ ownWords: e.target.value });
-  };
-
-  const handleMetaphorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMetaphor(e.target.value);
-    saveToStorage({ metaphor: e.target.value });
-  };
-
-  const addUnknownWord = () => {
-    const newWords = [...unknownWords, { word: "", result: "" }];
-    setUnknownWords(newWords);
-    saveToStorage({ unknownWords: newWords });
-  };
-
-  const updateUnknownWord = (
-    index: number,
-    field: keyof UnknownWord,
-    value: string,
-  ) => {
-    const newWords = [...unknownWords];
-    newWords[index][field] = value;
-    setUnknownWords(newWords);
-    saveToStorage({ unknownWords: newWords });
-  };
-
-  const addCategory = (cat: string) => {
-    const trimmed = cat.trim();
-    if (trimmed && !categories.includes(trimmed)) {
-      const newCategories = [...categories, trimmed];
-      setCategories(newCategories);
-      saveToStorage({ categories: newCategories });
-    }
-    setCategoryInput("");
-  };
-
-  // 関連リンクの処理
-
-  // 特殊コピペによるパース登録（URL入力欄などでペーストされた時用）
-  const handleLinkPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedText = e.clipboardData.getData("text");
-    const specialFormatRegex = /<(.*?),\s*(https?:\/\/[^\s,>]+),\s*(.*?)>/;
-    const match = pastedText.match(specialFormatRegex);
-
-    if (match) {
-      e.preventDefault(); // デフォルトの貼り付けを防止
-      const newLinks = [
-        ...links,
-        { memo: match[1].trim(), url: match[2].trim(), title: match[3].trim() },
-      ];
-      setLinks(newLinks);
-      saveToStorage({ links: newLinks });
-    }
-  };
-
-  // 3つの入力欄から手動で追加
-  const handleAddLink = () => {
-    const url = linkUrl.trim();
-    if (!url) return; // URLは必須とする
-
-    const newLinks = [
-      ...links,
-      { memo: linkMemo.trim(), url, title: linkTitle.trim() },
-    ];
-    setLinks(newLinks);
-    saveToStorage({ links: newLinks });
-
-    // 入力欄をクリア
-    setLinkMemo("");
-    setLinkUrl("");
-    setLinkTitle("");
-  };
-
-  // 特殊コピペ出力
-  const handleCopySpecialFormat = (link: LinkItem, index: number) => {
-    const formatStr = `<${link.memo}, ${link.url}, ${link.title}>`;
-    navigator.clipboard
-      .writeText(formatStr)
-      .then(() => {
-        // 成功したら2秒間だけ「コピー完了!」表示にする
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), 2000);
-      })
-      .catch((err) => {
-        console.error("Failed to copy!", err);
-      });
-  };
-
-  // リンクの削除（誤操作時のリカバリ用）
-  const handleRemoveLink = (index: number) => {
-    const newLinks = links.filter((_, i) => i !== index);
-    setLinks(newLinks);
-    saveToStorage({ links: newLinks });
-  };
-
-  // 4. 送信処理
-  const handleComplete = async () => {
-    if (!details.trim()) return;
-
-    setIsSubmitting(true);
-    const payload: StockIdeaInput = {
-      details,
-      technicalUnderstanding: JSON.stringify(techUnderstanding),
-      thinkingTraining: JSON.stringify(thinkingTraining),
-      activeMode: JSON.stringify(activeMode),
-      unknownWords: JSON.stringify(unknownWords),
-      relatedLinks: JSON.stringify(links), // 登録された全リンクをJSON化して送信
-      ownWords,
-      metaphor,
-      categories: JSON.stringify(categories),
-    };
-
-    const res = await addStockIdea(payload);
-    if (res) {
-      localStorage.removeItem("draft_idea_stock");
-      setDetails("");
-      setUnknownWords([]);
-      setLinks([]);
-      setOwnWords("");
-      setMetaphor("");
-      setCategories([]);
-    } else {
-      alert("登録に失敗しました");
-    }
-    setIsSubmitting(false);
-  };
+  // フックからステートと操作関数をすべて受け取る
+  const { state, setters, handlers } = useRegistration();
 
   return (
     <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
@@ -278,19 +37,19 @@ export default function RegistrationForm({
       <div className="flex gap-2 border-b border-white/10 pb-2">
         <button
           onClick={() => {
-            setActiveMode("understanding");
-            saveToStorage({ activeMode: "understanding" });
+            setters.setActiveMode("understanding");
+            handlers.saveToStorage({ activeMode: "understanding" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
         >
           理解モード（技術・概念）
         </button>
         <button
           onClick={() => {
-            setActiveMode("training");
-            saveToStorage({ activeMode: "training" });
+            setters.setActiveMode("training");
+            handlers.saveToStorage({ activeMode: "training" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
         >
           思考トレーニング
         </button>
@@ -300,117 +59,112 @@ export default function RegistrationForm({
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-white">詳細の記載</label>
         <textarea
-          value={details}
-          onChange={handleDetailsChange}
+          value={state.details}
+          onChange={(e) => {
+            setters.setDetails(e.target.value);
+            handlers.saveToStorage({ details: e.target.value });
+          }}
           placeholder="ここに詳細を記載します..."
           className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
         />
       </div>
 
       {/* 動的フォームの出し分け */}
-      {activeMode === "understanding" ? (
+      {state.activeMode === "understanding" ? (
         <TechFrameworkForm
-          data={techUnderstanding}
-          onChange={(field, value) => {
-            const newData = { ...techUnderstanding, [field]: value };
-            setTechUnderstanding(newData);
-            saveToStorage({ technicalUnderstanding: newData });
-          }}
+          data={state.techUnderstanding}
+          onChange={handlers.handleTechUnderstandingChange}
         />
       ) : (
         <TrainingFrameworkForm
-          data={thinkingTraining}
+          data={state.thinkingTraining}
           onChange={(newData) => {
-            setThinkingTraining(newData);
-            saveToStorage({ thinkingTraining: newData });
+            setters.setThinkingTraining(newData);
+            handlers.saveToStorage({ thinkingTraining: newData });
           }}
         />
       )}
 
       {/* わからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label className="font-semibold text-white">
-            わからない単語と調査した結果
-          </label>
-        </div>
-        {unknownWords.map((item, index) => (
+        <label className="font-semibold text-white">
+          わからない単語と調査した結果
+        </label>
+        {state.unknownWords.map((item, index) => (
           <div key={index} className="flex gap-2">
             <input
               type="text"
               placeholder="単語"
               value={item.word}
-              onChange={(e) => updateUnknownWord(index, "word", e.target.value)}
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
+              onChange={(e) =>
+                handlers.updateUnknownWord(index, "word", e.target.value)
+              }
+              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
             />
             <input
               type="text"
               placeholder="調査結果"
               value={item.result}
               onChange={(e) =>
-                updateUnknownWord(index, "result", e.target.value)
+                handlers.updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
+              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
             />
           </div>
         ))}
-        <div className="flex items-center justify-end">
+        <div className="flex justify-end">
           <Button
-            onClick={addUnknownWord}
-            className="bg-primary hover:bg-primary text-primary-foreground gap-2"
+            onClick={handlers.addUnknownWord}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             追加
           </Button>
         </div>
       </div>
 
-      {/* ★ 関連リンク（今回の改修箇所） */}
+      {/* 関連リンク */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-white">
           関連リンク (課題対応コピペ対応)
         </label>
-
-        {/* 入力フォーム群 */}
         <div className="flex flex-col gap-2 rounded border border-white bg-[#121214] p-3">
           <input
             type="text"
             placeholder="リンクのメモ"
-            value={linkMemo}
-            onChange={(e) => setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
+            value={state.linkMemo}
+            onChange={(e) => setters.setLinkMemo(e.target.value)}
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
           />
-          {/* 既存の特殊コピペ機能は、URL欄にペーストされたときに発火させる */}
           <input
             type="url"
             placeholder="関連リンクURL (必須 / ここに特殊コピペの貼り付けも可)"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            onPaste={handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
+            value={state.linkUrl}
+            onChange={(e) => setters.setLinkUrl(e.target.value)}
+            onPaste={handlers.handleLinkPaste}
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
-            value={linkTitle}
-            onChange={(e) => setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:border-white focus:outline-none"
+            value={state.linkTitle}
+            onChange={(e) => setters.setLinkTitle(e.target.value)}
+            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
               type="button"
-              onClick={handleAddLink}
-              disabled={!linkUrl.trim()}
-              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+              onClick={handlers.handleAddLink}
+              disabled={!state.linkUrl.trim()}
+              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
             >
               追加
             </button>
           </div>
         </div>
 
-        {/* 追加されたリンクのリストと特殊コピペ出力 */}
-        {links.length > 0 && (
+        {state.links.length > 0 && (
           <ul className="flex flex-col gap-2">
-            {links.map((link, index) => (
+            {state.links.map((link, index) => (
               <li
                 key={index}
                 className="flex flex-col gap-1 rounded border border-white bg-white/5 p-3"
@@ -432,17 +186,19 @@ export default function RegistrationForm({
                   <div className="ml-2 flex shrink-0 items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleCopySpecialFormat(link, index)}
-                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 hover:text-white"
-                      title="<メモ, URL, タイトル>の形式でコピー"
+                      onClick={() =>
+                        handlers.handleCopySpecialFormat(link, index)
+                      }
+                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
                     >
-                      {copiedIndex === index ? "コピー完了!" : "特殊コピペ"}
+                      {state.copiedIndex === index
+                        ? "コピー完了!"
+                        : "特殊コピペ"}
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleRemoveLink(index)}
-                      className="rounded text-white transition-colors hover:text-red-400"
-                      title="削除"
+                      onClick={() => handlers.handleRemoveLink(index)}
+                      className="rounded text-white hover:text-red-400"
                     >
                       ✕
                     </button>
@@ -454,49 +210,53 @@ export default function RegistrationForm({
         )}
       </div>
 
-      {/* 自分の言葉で整理 */}
+      {/* 自分の言葉・たとえ・カテゴリ */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-white">自分の言葉で整理</label>
         <textarea
-          value={ownWords}
-          onChange={handleOwnWordsChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
+          value={state.ownWords}
+          onChange={(e) => {
+            setters.setOwnWords(e.target.value);
+            handlers.saveToStorage({ ownWords: e.target.value });
+          }}
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
         />
       </div>
-
-      {/* たとえを考える */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-white">たとえを考える</label>
         <textarea
-          value={metaphor}
-          onChange={handleMetaphorChange}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
+          value={state.metaphor}
+          onChange={(e) => {
+            setters.setMetaphor(e.target.value);
+            handlers.saveToStorage({ metaphor: e.target.value });
+          }}
+          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
         />
       </div>
-
-      {/* カテゴリ登録 */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-white">カテゴリ登録</label>
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="カテゴリを入力して追加"
-            value={categoryInput}
-            onChange={(e) => setCategoryInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addCategory(categoryInput)}
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:border-white focus:outline-none"
+            value={state.categoryInput}
+            onChange={(e) => setters.setCategoryInput(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && handlers.addCategory(state.categoryInput)
+            }
+            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
           />
           <button
-            onClick={() => addCategory(categoryInput)}
-            disabled={!categoryInput.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+            onClick={() => handlers.addCategory(state.categoryInput)}
+            disabled={!state.categoryInput.trim()}
+            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
             追加
           </button>
         </div>
-        {categories.length > 0 && (
+        {state.categories.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {categories.map((cat, i) => (
+            {state.categories.map((cat, i) => (
               <span
                 key={i}
                 className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
@@ -504,9 +264,11 @@ export default function RegistrationForm({
                 {cat}
                 <button
                   onClick={() => {
-                    const newCats = categories.filter((_, idx) => idx !== i);
-                    setCategories(newCats);
-                    saveToStorage({ categories: newCats });
+                    const newCats = state.categories.filter(
+                      (_, idx) => idx !== i,
+                    );
+                    setters.setCategories(newCats);
+                    handlers.saveToStorage({ categories: newCats });
                   }}
                   className="ml-1 text-blue-300/50 hover:text-blue-300"
                 >
@@ -520,11 +282,11 @@ export default function RegistrationForm({
 
       <div className="mt-4 flex justify-end">
         <button
-          onClick={handleComplete}
-          disabled={isSubmitting || !details.trim()}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+          onClick={handlers.handleComplete}
+          disabled={state.isSubmitting || !state.details.trim()}
+          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
         >
-          {isSubmitting ? "送信中..." : "完了"}
+          {state.isSubmitting ? "送信中..." : "完了"}
         </button>
       </div>
     </div>
