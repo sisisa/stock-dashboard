@@ -41,13 +41,13 @@ export default function IdeaDetailModal({
   const renderField = (
     label: string,
     value: string | undefined,
-    colorClass: string = "text-blue-400",
+    colorClass: string = "text-black-400",
   ) => {
     if (!value || value.trim() === "") return null;
     return (
       <div className="mb-2 flex flex-col">
         <span className={`font-bold ${colorClass}`}>{label}</span>
-        <span className="whitespace-pre-wrap text-white">{value}</span>
+        <span className="whitespace-pre-wrap text-black">{value}</span>
       </div>
     );
   };
@@ -81,18 +81,18 @@ export default function IdeaDetailModal({
         また、高さを max-h-full とし、内部で overflow-y-auto を指定することで、
         情報量が多くなっても画面からはみ出さずスクロールできるようにしている。
       */}
-      <div className="custom-scrollbar flex max-h-full w-full max-w-4xl flex-col gap-6 overflow-y-auto rounded-2xl border border-white/10 bg-[#121214] p-6 shadow-2xl">
+      <div className="custom-scrollbar flex max-h-full w-full max-w-4xl flex-col gap-6 overflow-y-auto rounded-2xl border border-black/10 bg-[#ffffff] p-6 shadow-2xl">
         {/* ヘッダー部分 */}
-        <div className="flex items-start justify-between border-b border-white/10 pb-4">
+        <div className="flex items-start justify-between border-b border-black/10 pb-4">
           <div className="flex flex-col gap-2">
-            <h3 className="text-lg font-bold text-white/90">詳細情報の確認</h3>
+            <h3 className="text-lg font-bold text-black">詳細情報の確認</h3>
             {/* カテゴリ表示 */}
             {categories.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {categories.map((cat, i) => (
                   <span
                     key={i}
-                    className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                    className="rounded bg-blue-500 px-2 py-1 font-semibold text-white"
                   >
                     {cat}
                   </span>
@@ -102,17 +102,17 @@ export default function IdeaDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-black hover:bg-white/10 hover:text-black"
           >
             ✕
           </button>
         </div>
 
         {/* コンテンツ部分 */}
-        <div className="flex flex-col gap-6 text-sm text-white/80">
+        <div className="flex flex-col gap-6 text-sm text-black">
           {/* 詳細の記載 */}
           <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">詳細の記載</h4>
+            <h4 className="font-semibold text-black">詳細の記載</h4>
             <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
               {idea.details || "未記載"}
             </p>
@@ -120,8 +120,8 @@ export default function IdeaDetailModal({
 
           {/* モードに応じた表示切り替え */}
           {idea.activeMode === "training" ? (
-            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
-              <h3 className="mb-2 text-sm font-bold text-purple-400">
+            <div className="flex flex-col gap-2 rounded border border-black/10 bg-[#ffffff] p-4">
+              <h3 className="mb-2 font-bold text-purple-400">
                 思考トレーニング
               </h3>
               {renderField("テーマ", trainingData?.theme)}
@@ -135,55 +135,47 @@ export default function IdeaDetailModal({
               {/* 必要な項目を適宜renderFieldで呼び出す */}
             </div>
           ) : (
-            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
-              <h3 className="mb-2 text-sm font-bold text-white">
+            <div className="flex flex-col gap-2 rounded border border-black/10 bg-[#ffffff] p-4">
+              <h3 className="mb-2 text-sm font-bold text-black">
                 理解フレームワーク
               </h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {renderField("なぜ存在するのか？", techData?.why, "text-black")}
                 {renderField(
-                  "Why (なぜ存在するのか？)",
-                  techData?.why,
-                  "text-white",
-                )}
-                {renderField(
-                  "Problem (何を解決するのか？)",
+                  "何を解決するのか？",
                   techData?.problem,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Difference (他の類似概念との決定的な違いは？)",
+                  "それぞれどんな違いがある？",
                   techData?.difference,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Mechanism (内部で何が起きているのか？)",
+                  "内部で何が起きているのか？",
                   techData?.mechanism,
-                  "text-white",
+                  "text-black",
                 )}
+                {renderField("いつ動くのか？", techData?.trigger, "text-black")}
                 {renderField(
-                  "Trigger (いつ動くのか？)",
-                  techData?.trigger,
-                  "text-white",
-                )}
-                {renderField(
-                  "Without (無かったら何が困るのか？)",
+                  "無かったら何が困るのか？",
                   techData?.without,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Demerit (デメリット・トレードオフ)",
+                  "デメリット・トレードオフ",
                   techData?.demerit,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Situation (どんな場面で使うべきか？)",
+                  "どんな場面で使うべきか？",
                   techData?.situation,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Analogy (何に似ているのか？)",
+                  "何に似ているのか？",
                   techData?.analogy,
-                  "text-white",
+                  "text-black",
                 )}
               </div>
             </div>
@@ -192,27 +184,27 @@ export default function IdeaDetailModal({
 
         {/* 明確にわからない単語と調査結果 */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">
+          <h4 className="font-semibold text-black">
             明確にわからない単語と調査した結果
           </h4>
           {unknownWords.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {unknownWords.map((item, index) => (
-                <li key={index} className="rounded bg-white/5 p-3">
-                  <span className="font-bold text-white">{item.word}</span>
-                  <span className="mx-2 text-white">：</span>
-                  <span>{item.result}</span>
+                <li key={index} className="rounded bg-white p-3">
+                  <span className="font-bold text-black">{item.word}</span>
+                  <span className="font-bold text-black">：</span>
+                  <span className="font-bold text-black">{item.result}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-white/40">未記載</p>
+            <p className="text-black">未記載</p>
           )}
         </div>
 
         {/* 関連リンク */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">関連リンク</h4>
+          <h4 className="font-semibold text-black">関連リンク</h4>
           {relatedLinks.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {relatedLinks.map((link, index) => (
@@ -224,33 +216,33 @@ export default function IdeaDetailModal({
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-white hover:underline"
+                    className="font-bold text-black hover:underline"
                   >
                     {link.title || link.url}
                   </a>
                   {link.memo && (
-                    <p className="text-xs text-white">{link.memo}</p>
+                    <p className="text-xs text-black">{link.memo}</p>
                   )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-white/40">未記載</p>
+            <p className="text-black">未記載</p>
           )}
         </div>
 
         {/* 自分の言葉で整理 */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">自分の言葉で整理</h4>
-          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+          <h4 className="font-semibold text-black">自分の言葉で整理</h4>
+          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
             {idea.ownWords || "未記載"}
           </p>
         </div>
 
         {/* たとえを考える */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">たとえ</h4>
-          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+          <h4 className="font-semibold text-black">たとえ</h4>
+          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
             {idea.metaphor || "未記載"}
           </p>
         </div>

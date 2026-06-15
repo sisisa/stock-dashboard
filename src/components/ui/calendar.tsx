@@ -35,25 +35,25 @@ export function Calendar({ value, onChange }: CalendarProps) {
   const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
   return (
-    <div className="w-64 rounded-xl border border-white/10 bg-[#1a1a1c] p-3 shadow-2xl">
+    <div className="w-64 rounded-xl border border-white bg-[#ffffff] p-3 shadow-2xl">
       <div className="mb-3 flex items-center justify-between">
         <button
           onClick={handlePrevMonth}
-          className="rounded px-2 py-1 text-white/70 hover:bg-white/10 hover:text-white"
+          className="rounded px-2 py-1 text-black hover:bg-black hover:text-white"
         >
           &lt;
         </button>
-        <span className="text-sm font-bold text-white/90">
+        <span className="text-sm font-bold text-black">
           {year}年 {month + 1}月
         </span>
         <button
           onClick={handleNextMonth}
-          className="rounded px-2 py-1 text-white/70 hover:bg-white/10 hover:text-white"
+          className="rounded px-2 py-1 text-black hover:bg-black hover:text-white"
         >
           &gt;
         </button>
       </div>
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-xs text-white/50">
+      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-xs text-black">
         {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -70,7 +70,7 @@ export function Calendar({ value, onChange }: CalendarProps) {
                 className={`flex h-full w-full items-center justify-center rounded hover:bg-blue-500/50 ${
                   value && date.toDateString() === value.toDateString()
                     ? "bg-blue-500 font-bold text-white"
-                    : "text-white/80"
+                    : "text-black"
                 }`}
               >
                 {date.getDate()}

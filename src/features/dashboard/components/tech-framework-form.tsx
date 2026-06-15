@@ -13,51 +13,49 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
     label: string;
     color: string;
   }[] = [
-    { key: "why", label: "Why (なぜ存在するのか？)", color: "text-white" },
+    { key: "why", label: "なぜ存在するのか？", color: "font-bold text-black" },
     {
       key: "problem",
-      label: "Problem (何を解決するのか？)",
-      color: "text-white",
+      label: "何を解決するのか？",
+      color: "font-bold text-black",
     },
     {
       key: "difference",
-      label: "Difference (他の類似概念との決定的な違いは？)",
-      color: "text-white",
+      label: "それぞれどんな違いがある？",
+      color: "font-bold text-black",
     },
     {
       key: "mechanism",
-      label: "Mechanism (内部で何が起きているのか？)",
-      color: "text-white",
+      label: "内部で何が起きているのか？",
+      color: "font-bold text-black",
     },
-    { key: "trigger", label: "Trigger (いつ動くのか？)", color: "text-white" },
+    { key: "trigger", label: "いつ動くのか？", color: "font-bold text-black" },
     {
       key: "without",
-      label: "Without (無かったら何が困るのか？)",
-      color: "text-white",
+      label: "無かったら何が困るのか？",
+      color: "font-bold text-black",
     },
     {
       key: "demerit",
-      label: "Demerit(それを使うデメリット)",
-      color: "text-white",
+      label: "それを使うデメリット",
+      color: "font-bold text-black",
     },
     {
       key: "situation",
-      label: "Situation (どんな場面で使うべきか？)",
-      color: "text-white",
+      label: "どんな場面で使うべきか？",
+      color: "font-bold text-black",
     },
     {
       key: "analogy",
-      label: "Analogy (何に似ているのか？)",
-      color: "text-white",
+      label: "何に似ているのか？",
+      color: "font-bold text-black",
     },
   ];
 
   return (
-    <div className="flex flex-col gap-3 rounded border border-white/10 bg-[#1a1a1c] p-4">
-      <h3 className="text-sm font-bold text-white/80">
-        理解フレームワーク（技術・概念）
-      </h3>
-      <p className="mb-2 text-white">
+    <div className="flex flex-col gap-3 rounded border border-black/10 bg-[#ffffff] p-4">
+      <h3 className="font-bold text-black">理解フレームワーク（技術・概念）</h3>
+      <p className="font-bold text-black">
         ※ 関連しない項目は空欄のままスキップしてください。
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -68,7 +66,7 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
               type="text"
               value={data[key]}
               onChange={(e) => onChange(key, e.target.value)}
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+              className="w-full rounded border border-black bg-[#ffffff] p-2 text-sm text-black focus:border-black focus:outline-none"
             />
           </div>
         ))}

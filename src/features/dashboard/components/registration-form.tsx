@@ -18,13 +18,13 @@ export default function RegistrationForm({
   const { state, setters, handlers } = useRegistration();
 
   return (
-    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
+    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-black bg-white p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
         {onToggleRightPanel && (
           <Button
             onClick={onToggleRightPanel}
-            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white/20 hover:text-white"
+            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white hover:text-black"
           >
             {isRightPanelOpen
               ? "検索・確認パネルを隠す"
@@ -34,13 +34,13 @@ export default function RegistrationForm({
       </div>
 
       {/* タブ切り替えUI */}
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex gap-2 border-b border-black/10 pb-2">
         <button
           onClick={() => {
             setters.setActiveMode("understanding");
             handlers.saveToStorage({ activeMode: "understanding" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
         >
           理解モード（技術・概念）
         </button>
@@ -49,7 +49,7 @@ export default function RegistrationForm({
             setters.setActiveMode("training");
             handlers.saveToStorage({ activeMode: "training" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
         >
           思考トレーニング
         </button>
@@ -57,7 +57,7 @@ export default function RegistrationForm({
 
       {/* 詳細の記載 */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">詳細の記載</label>
+        <label className="font-semibold text-black">詳細の記載</label>
         <textarea
           value={state.details}
           onChange={(e) => {
@@ -65,7 +65,7 @@ export default function RegistrationForm({
             handlers.saveToStorage({ details: e.target.value });
           }}
           placeholder="ここに詳細を記載します..."
-          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
+          className="min-h-[100px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:border-black focus:outline-none"
         />
       </div>
 
@@ -87,7 +87,7 @@ export default function RegistrationForm({
 
       {/* わからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">
+        <label className="font-semibold text-black">
           わからない単語と調査した結果
         </label>
         {state.unknownWords.map((item, index) => (
@@ -99,7 +99,7 @@ export default function RegistrationForm({
               onChange={(e) =>
                 handlers.updateUnknownWord(index, "word", e.target.value)
               }
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+              className="w-1/3 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
             />
             <input
               type="text"
@@ -108,7 +108,7 @@ export default function RegistrationForm({
               onChange={(e) =>
                 handlers.updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+              className="w-2/3 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
             />
           </div>
         ))}
@@ -124,16 +124,16 @@ export default function RegistrationForm({
 
       {/* 関連リンク */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">
+        <label className="font-semibold text-black">
           関連リンク (課題対応コピペ対応)
         </label>
-        <div className="flex flex-col gap-2 rounded border border-white bg-[#121214] p-3">
+        <div className="flex flex-col gap-2 rounded border border-black bg-[#ffffff] p-3">
           <input
             type="text"
             placeholder="リンクのメモ"
             value={state.linkMemo}
             onChange={(e) => setters.setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <input
             type="url"
@@ -141,21 +141,21 @@ export default function RegistrationForm({
             value={state.linkUrl}
             onChange={(e) => setters.setLinkUrl(e.target.value)}
             onPaste={handlers.handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
             value={state.linkTitle}
             onChange={(e) => setters.setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
               type="button"
               onClick={handlers.handleAddLink}
               disabled={!state.linkUrl.trim()}
-              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
             >
               追加
             </button>
@@ -167,7 +167,7 @@ export default function RegistrationForm({
             {state.links.map((link, index) => (
               <li
                 key={index}
-                className="flex flex-col gap-1 rounded border border-white bg-white/5 p-3"
+                className="flex flex-col gap-1 rounded border border-black bg-white/5 p-3"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col overflow-hidden">
@@ -175,12 +175,12 @@ export default function RegistrationForm({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate font-bold text-blue-400 hover:underline"
+                      className="text-black-400 truncate font-bold hover:underline"
                     >
                       {link.title || link.url}
                     </a>
                     {link.memo && (
-                      <p className="mt-1 text-xs text-white">{link.memo}</p>
+                      <p className="mt-1 text-xs text-black">{link.memo}</p>
                     )}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-2">
@@ -189,7 +189,7 @@ export default function RegistrationForm({
                       onClick={() =>
                         handlers.handleCopySpecialFormat(link, index)
                       }
-                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
+                      className="rounded border border-black bg-white/10 px-2 py-1 text-xs font-medium text-black hover:bg-white/20"
                     >
                       {state.copiedIndex === index
                         ? "コピー完了!"
@@ -198,7 +198,7 @@ export default function RegistrationForm({
                     <button
                       type="button"
                       onClick={() => handlers.handleRemoveLink(index)}
-                      className="rounded text-white hover:text-red-400"
+                      className="rounded text-black hover:text-red-400"
                     >
                       ✕
                     </button>
@@ -212,29 +212,29 @@ export default function RegistrationForm({
 
       {/* 自分の言葉・たとえ・カテゴリ */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">自分の言葉で整理</label>
+        <label className="font-semibold text-black">自分の言葉で整理</label>
         <textarea
           value={state.ownWords}
           onChange={(e) => {
             setters.setOwnWords(e.target.value);
             handlers.saveToStorage({ ownWords: e.target.value });
           }}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:outline-none"
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">たとえを考える</label>
+        <label className="font-semibold text-black">たとえを考える</label>
         <textarea
           value={state.metaphor}
           onChange={(e) => {
             setters.setMetaphor(e.target.value);
             handlers.saveToStorage({ metaphor: e.target.value });
           }}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:outline-none"
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">カテゴリ登録</label>
+        <label className="font-semibold text-black">カテゴリ登録</label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -244,12 +244,12 @@ export default function RegistrationForm({
             onKeyDown={(e) =>
               e.key === "Enter" && handlers.addCategory(state.categoryInput)
             }
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+            className="flex-1 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
           />
           <button
             onClick={() => handlers.addCategory(state.categoryInput)}
             disabled={!state.categoryInput.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+            className="rounded bg-blue-600 px-4 py-2 font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
           >
             追加
           </button>
@@ -259,7 +259,7 @@ export default function RegistrationForm({
             {state.categories.map((cat, i) => (
               <span
                 key={i}
-                className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-black"
               >
                 {cat}
                 <button
@@ -270,7 +270,7 @@ export default function RegistrationForm({
                     setters.setCategories(newCats);
                     handlers.saveToStorage({ categories: newCats });
                   }}
-                  className="ml-1 text-blue-300/50 hover:text-blue-300"
+                  className="ml-1 text-black/50 hover:text-black"
                 >
                   ✕
                 </button>
@@ -284,7 +284,7 @@ export default function RegistrationForm({
         <button
           onClick={handlers.handleComplete}
           disabled={state.isSubmitting || !state.details.trim()}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-black hover:bg-blue-500 disabled:opacity-50"
         >
           {state.isSubmitting ? "送信中..." : "完了"}
         </button>

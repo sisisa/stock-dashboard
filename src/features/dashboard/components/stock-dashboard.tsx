@@ -17,7 +17,7 @@ export default function StockDashboard() {
       {/* 左側：登録パネル（右ペインが閉じている時は w-full で画面いっぱいに広がる） */}
       <div
         className={`h-full overflow-y-auto transition-all duration-300 ${
-          isRightPanelOpen ? "w-1/2 border-r border-white/10" : "w-full"
+          isRightPanelOpen ? "w-1/2 border-r border-black/10" : "w-full"
         }`}
       >
         <RegistrationForm

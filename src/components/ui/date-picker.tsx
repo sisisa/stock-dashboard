@@ -86,14 +86,14 @@ export function DatePicker({
           onChange={handleInputChange}
           onClick={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full min-w-[130px] rounded border border-white/10 bg-[#121214] p-2 pr-8 text-sm text-white/90 focus:border-white/30 focus:outline-none"
+          className="w-full min-w-[130px] rounded border border-black bg-[#ffffff] p-2 pr-8 text-black focus:border-white/30 focus:outline-none"
         />
         {/* 値が入力されている場合のみ✕ボタンを表示 */}
         {inputValue && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-white/40 hover:text-white/80"
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-black hover:text-white"
           >
             ✕
           </button>

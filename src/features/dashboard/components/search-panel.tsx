@@ -11,9 +11,9 @@ export default function SearchPanel() {
   const { state, setters, handlers } = useSearch();
 
   return (
-    <div className="relative flex h-full flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
-      <div className="flex gap-4 border-white">
-        <h1 className="text-xl font-bold">確認・検索</h1>
+    <div className="relative flex h-full flex-col gap-4 rounded-xl border border-black/10 bg-white/5 p-5">
+      <div className="flex gap-4 border-black">
+        <h1 className="text-xl font-bold text-black">確認・検索</h1>
         <Button
           onClick={handlers.handleDownloadMarkdown}
           className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
@@ -28,7 +28,7 @@ export default function SearchPanel() {
           placeholder="キーワード検索..."
           value={state.searchTerm}
           onChange={(e) => setters.setSearchTerm(e.target.value)}
-          className="w-full rounded border border-white/10 bg-[#121214] p-2 text-white/90"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
         />
         <div className="flex flex-wrap items-center gap-2">
           <Combobox
@@ -43,7 +43,7 @@ export default function SearchPanel() {
               onChange={setters.setStartDate}
               placeholder="開始日"
             />
-            <span className="text-white">〜</span>
+            <span className="text-black">〜</span>
             <DatePicker
               value={state.endDate}
               onChange={setters.setEndDate}
@@ -55,7 +55,7 @@ export default function SearchPanel() {
 
       {state.isLoading ? (
         <div className="flex h-full items-center justify-center p-5">
-          <p className="text-white/50">読み込み中...</p>
+          <p className="text-black">読み込み中...</p>
         </div>
       ) : state.error ? (
         <div className="flex h-full items-center justify-center p-5">
@@ -63,7 +63,7 @@ export default function SearchPanel() {
         </div>
       ) : state.filteredIdeas.length === 0 ? (
         <div className="flex h-full items-center justify-center p-5">
-          <p className="text-white/50">該当するアイデアがありません。</p>
+          <p className="text-black">該当するアイデアがありません。</p>
         </div>
       ) : (
         <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto">
@@ -71,7 +71,7 @@ export default function SearchPanel() {
             <div
               key={idea.id}
               onClick={() => setters.setSelectedIdea(idea)}
-              className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10"
+              className="cursor-pointer rounded-lg border border-black/10 bg-white/5 p-4 hover:bg-white/10"
             >
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-2">
@@ -79,22 +79,22 @@ export default function SearchPanel() {
                     idea.parsedCategories.map((cat, i) => (
                       <span
                         key={i}
-                        className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                        className="rounded bg-blue-500 px-2 py-1 font-semibold text-white"
                       >
                         {cat}
                       </span>
                     ))
                   ) : (
-                    <span className="rounded bg-white/10 px-2 py-1 text-xs font-semibold text-white/40">
+                    <span className="rounded bg-white/10 px-2 py-1 font-semibold text-black">
                       未分類
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-white/50">
+                <span className="text-black">
                   {new Date(idea.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-white/80">
+              <p className="mt-2 line-clamp-2 text-black">
                 {idea.details || "詳細なし"}
               </p>
             </div>
