@@ -203,13 +203,13 @@ export default function IdeaDetailModal({
   const renderField = (
     label: string,
     value: string | undefined,
-    colorClass: string = "text-blue-400",
+    colorClass: string = "text-black-400",
   ) => {
     if (!value || value.trim() === "") return null;
     return (
       <div className="mb-2 flex flex-col">
         <span className={`font-bold ${colorClass}`}>{label}</span>
-        <span className="whitespace-pre-wrap text-white">{value}</span>
+        <span className="whitespace-pre-wrap text-black">{value}</span>
       </div>
     );
   };
@@ -243,18 +243,18 @@ export default function IdeaDetailModal({
         また、高さを max-h-full とし、内部で overflow-y-auto を指定することで、
         情報量が多くなっても画面からはみ出さずスクロールできるようにしている。
       */}
-      <div className="custom-scrollbar flex max-h-full w-full max-w-4xl flex-col gap-6 overflow-y-auto rounded-2xl border border-white/10 bg-[#121214] p-6 shadow-2xl">
+      <div className="custom-scrollbar flex max-h-full w-full max-w-4xl flex-col gap-6 overflow-y-auto rounded-2xl border border-black/10 bg-[#ffffff] p-6 shadow-2xl">
         {/* ヘッダー部分 */}
-        <div className="flex items-start justify-between border-b border-white/10 pb-4">
+        <div className="flex items-start justify-between border-b border-black/10 pb-4">
           <div className="flex flex-col gap-2">
-            <h3 className="text-lg font-bold text-white/90">詳細情報の確認</h3>
+            <h3 className="text-lg font-bold text-black">詳細情報の確認</h3>
             {/* カテゴリ表示 */}
             {categories.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {categories.map((cat, i) => (
                   <span
                     key={i}
-                    className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                    className="rounded bg-blue-500 px-2 py-1 font-semibold text-white"
                   >
                     {cat}
                   </span>
@@ -264,17 +264,17 @@ export default function IdeaDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-black hover:bg-white/10 hover:text-black"
           >
             ✕
           </button>
         </div>
 
         {/* コンテンツ部分 */}
-        <div className="flex flex-col gap-6 text-sm text-white/80">
+        <div className="flex flex-col gap-6 text-sm text-black">
           {/* 詳細の記載 */}
           <div className="flex flex-col gap-2">
-            <h4 className="font-semibold text-white">詳細の記載</h4>
+            <h4 className="font-semibold text-black">詳細の記載</h4>
             <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
               {idea.details || "未記載"}
             </p>
@@ -282,8 +282,8 @@ export default function IdeaDetailModal({
 
           {/* モードに応じた表示切り替え */}
           {idea.activeMode === "training" ? (
-            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
-              <h3 className="mb-2 text-sm font-bold text-purple-400">
+            <div className="flex flex-col gap-2 rounded border border-black/10 bg-[#ffffff] p-4">
+              <h3 className="mb-2 font-bold text-purple-400">
                 思考トレーニング
               </h3>
               {renderField("テーマ", trainingData?.theme)}
@@ -297,55 +297,47 @@ export default function IdeaDetailModal({
               {/* 必要な項目を適宜renderFieldで呼び出す */}
             </div>
           ) : (
-            <div className="flex flex-col gap-2 rounded border border-white/10 bg-[#121214] p-4">
-              <h3 className="mb-2 text-sm font-bold text-white">
+            <div className="flex flex-col gap-2 rounded border border-black/10 bg-[#ffffff] p-4">
+              <h3 className="mb-2 text-sm font-bold text-black">
                 理解フレームワーク
               </h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {renderField("なぜ存在するのか？", techData?.why, "text-black")}
                 {renderField(
-                  "Why (なぜ存在するのか？)",
-                  techData?.why,
-                  "text-white",
-                )}
-                {renderField(
-                  "Problem (何を解決するのか？)",
+                  "何を解決するのか？",
                   techData?.problem,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Difference (他の類似概念との決定的な違いは？)",
+                  "それぞれどんな違いがある？",
                   techData?.difference,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Mechanism (内部で何が起きているのか？)",
+                  "内部で何が起きているのか？",
                   techData?.mechanism,
-                  "text-white",
+                  "text-black",
                 )}
+                {renderField("いつ動くのか？", techData?.trigger, "text-black")}
                 {renderField(
-                  "Trigger (いつ動くのか？)",
-                  techData?.trigger,
-                  "text-white",
-                )}
-                {renderField(
-                  "Without (無かったら何が困るのか？)",
+                  "無かったら何が困るのか？",
                   techData?.without,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Demerit (デメリット・トレードオフ)",
+                  "デメリット・トレードオフ",
                   techData?.demerit,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Situation (どんな場面で使うべきか？)",
+                  "どんな場面で使うべきか？",
                   techData?.situation,
-                  "text-white",
+                  "text-black",
                 )}
                 {renderField(
-                  "Analogy (何に似ているのか？)",
+                  "何に似ているのか？",
                   techData?.analogy,
-                  "text-white",
+                  "text-black",
                 )}
               </div>
             </div>
@@ -354,27 +346,27 @@ export default function IdeaDetailModal({
 
         {/* 明確にわからない単語と調査結果 */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">
+          <h4 className="font-semibold text-black">
             明確にわからない単語と調査した結果
           </h4>
           {unknownWords.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {unknownWords.map((item, index) => (
-                <li key={index} className="rounded bg-white/5 p-3">
-                  <span className="font-bold text-white">{item.word}</span>
-                  <span className="mx-2 text-white">：</span>
-                  <span>{item.result}</span>
+                <li key={index} className="rounded bg-white p-3">
+                  <span className="font-bold text-black">{item.word}</span>
+                  <span className="font-bold text-black">：</span>
+                  <span className="font-bold text-black">{item.result}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-white/40">未記載</p>
+            <p className="text-black">未記載</p>
           )}
         </div>
 
         {/* 関連リンク */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">関連リンク</h4>
+          <h4 className="font-semibold text-black">関連リンク</h4>
           {relatedLinks.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {relatedLinks.map((link, index) => (
@@ -386,33 +378,33 @@ export default function IdeaDetailModal({
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-white hover:underline"
+                    className="font-bold text-black hover:underline"
                   >
                     {link.title || link.url}
                   </a>
                   {link.memo && (
-                    <p className="text-xs text-white">{link.memo}</p>
+                    <p className="text-xs text-black">{link.memo}</p>
                   )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-white/40">未記載</p>
+            <p className="text-black">未記載</p>
           )}
         </div>
 
         {/* 自分の言葉で整理 */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">自分の言葉で整理</h4>
-          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+          <h4 className="font-semibold text-black">自分の言葉で整理</h4>
+          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
             {idea.ownWords || "未記載"}
           </p>
         </div>
 
         {/* たとえを考える */}
         <div className="flex flex-col gap-2">
-          <h4 className="font-semibold text-white">たとえ</h4>
-          <p className="rounded bg-white/5 p-4 whitespace-pre-wrap">
+          <h4 className="font-semibold text-black">たとえ</h4>
+          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
             {idea.metaphor || "未記載"}
           </p>
         </div>
@@ -446,13 +438,13 @@ export default function RegistrationForm({
   const { state, setters, handlers } = useRegistration();
 
   return (
-    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-white bg-white/5 p-5">
+    <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-black bg-white p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
         {onToggleRightPanel && (
           <Button
             onClick={onToggleRightPanel}
-            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white/20 hover:text-white"
+            className="bg-primary flex items-center gap-2 rounded px-3 py-1.5 font-semibold text-white transition-colors hover:bg-white hover:text-black"
           >
             {isRightPanelOpen
               ? "検索・確認パネルを隠す"
@@ -462,13 +454,13 @@ export default function RegistrationForm({
       </div>
 
       {/* タブ切り替えUI */}
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex gap-2 border-b border-black/10 pb-2">
         <button
           onClick={() => {
             setters.setActiveMode("understanding");
             handlers.saveToStorage({ activeMode: "understanding" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-blue-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
         >
           理解モード（技術・概念）
         </button>
@@ -477,7 +469,7 @@ export default function RegistrationForm({
             setters.setActiveMode("training");
             handlers.saveToStorage({ activeMode: "training" });
           }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-purple-500 text-white" : "bg-white/5 text-white hover:bg-white/10"}`}
+          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
         >
           思考トレーニング
         </button>
@@ -485,7 +477,7 @@ export default function RegistrationForm({
 
       {/* 詳細の記載 */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">詳細の記載</label>
+        <label className="font-semibold text-black">詳細の記載</label>
         <textarea
           value={state.details}
           onChange={(e) => {
@@ -493,7 +485,7 @@ export default function RegistrationForm({
             handlers.saveToStorage({ details: e.target.value });
           }}
           placeholder="ここに詳細を記載します..."
-          className="min-h-[100px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:border-white focus:outline-none"
+          className="min-h-[100px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:border-black focus:outline-none"
         />
       </div>
 
@@ -515,7 +507,7 @@ export default function RegistrationForm({
 
       {/* わからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">
+        <label className="font-semibold text-black">
           わからない単語と調査した結果
         </label>
         {state.unknownWords.map((item, index) => (
@@ -527,7 +519,7 @@ export default function RegistrationForm({
               onChange={(e) =>
                 handlers.updateUnknownWord(index, "word", e.target.value)
               }
-              className="w-1/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+              className="w-1/3 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
             />
             <input
               type="text"
@@ -536,7 +528,7 @@ export default function RegistrationForm({
               onChange={(e) =>
                 handlers.updateUnknownWord(index, "result", e.target.value)
               }
-              className="w-2/3 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+              className="w-2/3 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
             />
           </div>
         ))}
@@ -552,16 +544,16 @@ export default function RegistrationForm({
 
       {/* 関連リンク */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">
+        <label className="font-semibold text-black">
           関連リンク (課題対応コピペ対応)
         </label>
-        <div className="flex flex-col gap-2 rounded border border-white bg-[#121214] p-3">
+        <div className="flex flex-col gap-2 rounded border border-black bg-[#ffffff] p-3">
           <input
             type="text"
             placeholder="リンクのメモ"
             value={state.linkMemo}
             onChange={(e) => setters.setLinkMemo(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <input
             type="url"
@@ -569,21 +561,21 @@ export default function RegistrationForm({
             value={state.linkUrl}
             onChange={(e) => setters.setLinkUrl(e.target.value)}
             onPaste={handlers.handleLinkPaste}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <input
             type="text"
             placeholder="リンクタイトル"
             value={state.linkTitle}
             onChange={(e) => setters.setLinkTitle(e.target.value)}
-            className="w-full rounded border border-white bg-white/5 p-2 text-white focus:outline-none"
+            className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
             <button
               type="button"
               onClick={handlers.handleAddLink}
               disabled={!state.linkUrl.trim()}
-              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
             >
               追加
             </button>
@@ -595,7 +587,7 @@ export default function RegistrationForm({
             {state.links.map((link, index) => (
               <li
                 key={index}
-                className="flex flex-col gap-1 rounded border border-white bg-white/5 p-3"
+                className="flex flex-col gap-1 rounded border border-black bg-white/5 p-3"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col overflow-hidden">
@@ -603,12 +595,12 @@ export default function RegistrationForm({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="truncate font-bold text-blue-400 hover:underline"
+                      className="text-black-400 truncate font-bold hover:underline"
                     >
                       {link.title || link.url}
                     </a>
                     {link.memo && (
-                      <p className="mt-1 text-xs text-white">{link.memo}</p>
+                      <p className="mt-1 text-xs text-black">{link.memo}</p>
                     )}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-2">
@@ -617,7 +609,7 @@ export default function RegistrationForm({
                       onClick={() =>
                         handlers.handleCopySpecialFormat(link, index)
                       }
-                      className="rounded border border-white bg-white/10 px-2 py-1 text-xs font-medium text-white hover:bg-white/20"
+                      className="rounded border border-black bg-white/10 px-2 py-1 text-xs font-medium text-black hover:bg-white/20"
                     >
                       {state.copiedIndex === index
                         ? "コピー完了!"
@@ -626,7 +618,7 @@ export default function RegistrationForm({
                     <button
                       type="button"
                       onClick={() => handlers.handleRemoveLink(index)}
-                      className="rounded text-white hover:text-red-400"
+                      className="rounded text-black hover:text-red-400"
                     >
                       ✕
                     </button>
@@ -640,29 +632,29 @@ export default function RegistrationForm({
 
       {/* 自分の言葉・たとえ・カテゴリ */}
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">自分の言葉で整理</label>
+        <label className="font-semibold text-black">自分の言葉で整理</label>
         <textarea
           value={state.ownWords}
           onChange={(e) => {
             setters.setOwnWords(e.target.value);
             handlers.saveToStorage({ ownWords: e.target.value });
           }}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:outline-none"
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">たとえを考える</label>
+        <label className="font-semibold text-black">たとえを考える</label>
         <textarea
           value={state.metaphor}
           onChange={(e) => {
             setters.setMetaphor(e.target.value);
             handlers.saveToStorage({ metaphor: e.target.value });
           }}
-          className="min-h-[80px] w-full rounded border border-white bg-[#121214] p-3 text-white focus:outline-none"
+          className="min-h-[80px] w-full rounded border border-black bg-[#ffffff] p-3 text-black focus:outline-none"
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-white">カテゴリ登録</label>
+        <label className="font-semibold text-black">カテゴリ登録</label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -672,12 +664,12 @@ export default function RegistrationForm({
             onKeyDown={(e) =>
               e.key === "Enter" && handlers.addCategory(state.categoryInput)
             }
-            className="flex-1 rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+            className="flex-1 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
           />
           <button
             onClick={() => handlers.addCategory(state.categoryInput)}
             disabled={!state.categoryInput.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+            className="rounded bg-blue-600 px-4 py-2 font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
           >
             追加
           </button>
@@ -687,7 +679,7 @@ export default function RegistrationForm({
             {state.categories.map((cat, i) => (
               <span
                 key={i}
-                className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-black"
               >
                 {cat}
                 <button
@@ -698,7 +690,7 @@ export default function RegistrationForm({
                     setters.setCategories(newCats);
                     handlers.saveToStorage({ categories: newCats });
                   }}
-                  className="ml-1 text-blue-300/50 hover:text-blue-300"
+                  className="ml-1 text-black/50 hover:text-black"
                 >
                   ✕
                 </button>
@@ -712,7 +704,7 @@ export default function RegistrationForm({
         <button
           onClick={handlers.handleComplete}
           disabled={state.isSubmitting || !state.details.trim()}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-black hover:bg-blue-500 disabled:opacity-50"
         >
           {state.isSubmitting ? "送信中..." : "完了"}
         </button>
@@ -739,9 +731,9 @@ export default function SearchPanel() {
   const { state, setters, handlers } = useSearch();
 
   return (
-    <div className="relative flex h-full flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
-      <div className="flex gap-4 border-white">
-        <h1 className="text-xl font-bold">確認・検索</h1>
+    <div className="relative flex h-full flex-col gap-4 rounded-xl border border-black/10 bg-white/5 p-5">
+      <div className="flex gap-4 border-black">
+        <h1 className="text-xl font-bold text-black">確認・検索</h1>
         <Button
           onClick={handlers.handleDownloadMarkdown}
           className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
@@ -756,7 +748,7 @@ export default function SearchPanel() {
           placeholder="キーワード検索..."
           value={state.searchTerm}
           onChange={(e) => setters.setSearchTerm(e.target.value)}
-          className="w-full rounded border border-white/10 bg-[#121214] p-2 text-white/90"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
         />
         <div className="flex flex-wrap items-center gap-2">
           <Combobox
@@ -771,7 +763,7 @@ export default function SearchPanel() {
               onChange={setters.setStartDate}
               placeholder="開始日"
             />
-            <span className="text-white">〜</span>
+            <span className="text-black">〜</span>
             <DatePicker
               value={state.endDate}
               onChange={setters.setEndDate}
@@ -783,7 +775,7 @@ export default function SearchPanel() {
 
       {state.isLoading ? (
         <div className="flex h-full items-center justify-center p-5">
-          <p className="text-white/50">読み込み中...</p>
+          <p className="text-black">読み込み中...</p>
         </div>
       ) : state.error ? (
         <div className="flex h-full items-center justify-center p-5">
@@ -791,7 +783,7 @@ export default function SearchPanel() {
         </div>
       ) : state.filteredIdeas.length === 0 ? (
         <div className="flex h-full items-center justify-center p-5">
-          <p className="text-white/50">該当するアイデアがありません。</p>
+          <p className="text-black">該当するアイデアがありません。</p>
         </div>
       ) : (
         <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto">
@@ -799,7 +791,7 @@ export default function SearchPanel() {
             <div
               key={idea.id}
               onClick={() => setters.setSelectedIdea(idea)}
-              className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10"
+              className="cursor-pointer rounded-lg border border-black/10 bg-white/5 p-4 hover:bg-white/10"
             >
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-2">
@@ -807,22 +799,22 @@ export default function SearchPanel() {
                     idea.parsedCategories.map((cat, i) => (
                       <span
                         key={i}
-                        className="rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-blue-300"
+                        className="rounded bg-blue-500 px-2 py-1 font-semibold text-white"
                       >
                         {cat}
                       </span>
                     ))
                   ) : (
-                    <span className="rounded bg-white/10 px-2 py-1 text-xs font-semibold text-white/40">
+                    <span className="rounded bg-white/10 px-2 py-1 font-semibold text-black">
                       未分類
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-white/50">
+                <span className="text-black">
                   {new Date(idea.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-white/80">
+              <p className="mt-2 line-clamp-2 text-black">
                 {idea.details || "詳細なし"}
               </p>
             </div>
@@ -864,7 +856,7 @@ export default function StockDashboard() {
       {/* 左側：登録パネル（右ペインが閉じている時は w-full で画面いっぱいに広がる） */}
       <div
         className={`h-full overflow-y-auto transition-all duration-300 ${
-          isRightPanelOpen ? "w-1/2 border-r border-white/10" : "w-full"
+          isRightPanelOpen ? "w-1/2 border-r border-black/10" : "w-full"
         }`}
       >
         <RegistrationForm
@@ -903,51 +895,49 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
     label: string;
     color: string;
   }[] = [
-    { key: "why", label: "Why (なぜ存在するのか？)", color: "text-white" },
+    { key: "why", label: "なぜ存在するのか？", color: "font-bold text-black" },
     {
       key: "problem",
-      label: "Problem (何を解決するのか？)",
-      color: "text-white",
+      label: "何を解決するのか？",
+      color: "font-bold text-black",
     },
     {
       key: "difference",
-      label: "Difference (他の類似概念との決定的な違いは？)",
-      color: "text-white",
+      label: "それぞれどんな違いがある？",
+      color: "font-bold text-black",
     },
     {
       key: "mechanism",
-      label: "Mechanism (内部で何が起きているのか？)",
-      color: "text-white",
+      label: "内部で何が起きているのか？",
+      color: "font-bold text-black",
     },
-    { key: "trigger", label: "Trigger (いつ動くのか？)", color: "text-white" },
+    { key: "trigger", label: "いつ動くのか？", color: "font-bold text-black" },
     {
       key: "without",
-      label: "Without (無かったら何が困るのか？)",
-      color: "text-white",
+      label: "無かったら何が困るのか？",
+      color: "font-bold text-black",
     },
     {
       key: "demerit",
-      label: "Demerit(それを使うデメリット)",
-      color: "text-white",
+      label: "それを使うデメリット",
+      color: "font-bold text-black",
     },
     {
       key: "situation",
-      label: "Situation (どんな場面で使うべきか？)",
-      color: "text-white",
+      label: "どんな場面で使うべきか？",
+      color: "font-bold text-black",
     },
     {
       key: "analogy",
-      label: "Analogy (何に似ているのか？)",
-      color: "text-white",
+      label: "何に似ているのか？",
+      color: "font-bold text-black",
     },
   ];
 
   return (
-    <div className="flex flex-col gap-3 rounded border border-white/10 bg-[#1a1a1c] p-4">
-      <h3 className="text-sm font-bold text-white/80">
-        理解フレームワーク（技術・概念）
-      </h3>
-      <p className="mb-2 text-white">
+    <div className="flex flex-col gap-3 rounded border border-black/10 bg-[#ffffff] p-4">
+      <h3 className="font-bold text-black">理解フレームワーク（技術・概念）</h3>
+      <p className="font-bold text-black">
         ※ 関連しない項目は空欄のままスキップしてください。
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -958,7 +948,7 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
               type="text"
               value={data[key]}
               onChange={(e) => onChange(key, e.target.value)}
-              className="w-full rounded border border-white bg-[#121214] p-2 text-sm text-white focus:border-white focus:outline-none"
+              className="w-full rounded border border-black bg-[#ffffff] p-2 text-sm text-black focus:border-black focus:outline-none"
             />
           </div>
         ))}
@@ -966,8 +956,6 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
     </div>
   );
 }
-
-
 
 ================================================
 FILE: src/features/dashboard/components/training-framework-form.tsx
@@ -1005,40 +993,40 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-6 rounded border border-white bg-[#1a1a1c] p-4">
-      <h3 className="font-bold text-white">思考トレーニングモード</h3>
-      <p className="-mt-4 text-white">
+    <div className="flex flex-col gap-6 rounded border border-black bg-[#ffffff] p-4">
+      <h3 className="font-bold text-black">思考トレーニングモード</h3>
+      <p className="font-bold text-black">
         ※ 関連しない項目は空欄のままスキップしてください。
       </p>
 
       {/* 導入 */}
       <div className="grid grid-cols-1 gap-3">
-        <label className="text-white">テーマ</label>
+        <label className="font-bold text-black">テーマ</label>
         <input
           type="text"
           value={data.theme}
           onChange={(e) => updateRoot("theme", e.target.value)}
-          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
         />
-        <label className="text-white">今日の論点</label>
+        <label className="font-bold text-black">今日の論点</label>
         <input
           type="text"
           value={data.issue}
           onChange={(e) => updateRoot("issue", e.target.value)}
-          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
         />
-        <label className="text-white">今回は考えないこと</label>
+        <label className="font-bold text-black">今回は考えないこと</label>
         <input
           type="text"
           value={data.exclusion}
           onChange={(e) => updateRoot("exclusion", e.target.value)}
-          className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
         />
       </div>
 
       {/* 5W1H */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <h4 className="col-span-full font-bold text-white">5W1H</h4>
+        <h4 className="col-span-full font-bold text-black">5W1H</h4>
         {Object.entries({
           when: "When (どんな時に問題になるか)",
           where: "Where (どんな場面・環境で関係するか)",
@@ -1048,12 +1036,12 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
           how: "How (どう向き合えるか)",
         }).map(([k, label]) => (
           <div key={k} className="flex flex-col gap-1">
-            <label className="text-white">{label}</label>
+            <label className="font-bold text-black">{label}</label>
             <input
               type="text"
               value={(data.fiveW1H as any)[k]}
               onChange={(e) => updateNested("fiveW1H", k, e.target.value)}
-              className="w-full rounded border border-white bg-[#121214] p-2 text-white focus:outline-none"
+              className="w-full rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
             />
           </div>
         ))}
@@ -1062,13 +1050,13 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
       {/* Why So / So What */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <h4 className="font-bold text-white">Why So? (なぜそうなる？)</h4>
+          <h4 className="font-bold text-black">Why So? (なぜそうなる？)</h4>
           <input
             type="text"
             placeholder="問い"
             value={data.whySo.question}
             onChange={(e) => updateNested("whySo", "question", e.target.value)}
-            className="mb-1 w-full rounded border border-white bg-[#121214] p-2 text-white"
+            className="mb-1 w-full rounded border border-black bg-[#ffffff] p-2 text-black"
           />
           {[0, 1, 2, 3, 4].map((i) => (
             <input
@@ -1079,12 +1067,12 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
               onChange={(e) =>
                 updateNested("whySo", "answers", e.target.value, i)
               }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+              className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
             />
           ))}
         </div>
         <div className="flex flex-col gap-2">
-          <h4 className="font-bold text-white">
+          <h4 className="font-bold text-black">
             So What? (それってどういうこと？)
           </h4>
           <input
@@ -1092,7 +1080,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
             placeholder="問い"
             value={data.soWhat.question}
             onChange={(e) => updateNested("soWhat", "question", e.target.value)}
-            className="mb-1 w-full rounded border border-white bg-[#121214] p-2 text-white"
+            className="mb-1 w-full rounded border border-black bg-[#ffffff] p-2 text-black"
           />
           {[0, 1, 2, 3, 4].map((i) => (
             <input
@@ -1103,7 +1091,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
               onChange={(e) =>
                 updateNested("soWhat", "answers", e.target.value, i)
               }
-              className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+              className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
             />
           ))}
         </div>
@@ -1111,7 +1099,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
 
       {/* 共通点・構造 */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-bold text-white">共通点の抽出</h4>
+        <h4 className="font-bold text-black">共通点の抽出</h4>
         <div className="grid grid-cols-2 gap-2">
           <input
             type="text"
@@ -1120,7 +1108,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
             onChange={(e) =>
               updateNested("commonalities", "targetA", e.target.value)
             }
-            className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+            className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
           />
           <input
             type="text"
@@ -1129,7 +1117,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
             onChange={(e) =>
               updateNested("commonalities", "targetB", e.target.value)
             }
-            className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+            className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
           />
         </div>
         <textarea
@@ -1138,7 +1126,7 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
           onChange={(e) =>
             updateNested("commonalities", "points", e.target.value.split("\n"))
           }
-          className="h-24 w-full resize-none rounded border border-white bg-[#121214] p-2 text-white"
+          className="h-24 w-full resize-none rounded border border-black bg-[#ffffff] p-2 text-black"
         />
         <input
           type="text"
@@ -1147,13 +1135,13 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
           onChange={(e) =>
             updateNested("commonalities", "structure", e.target.value)
           }
-          className="w-full rounded border border-white bg-[#121214] p-2 text-white"
+          className="w-full rounded border border-black bg-[#ffffff] p-2 text-black"
         />
       </div>
 
       {/* 論理チェックと一文結論 */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-bold text-white">論理チェック & 結論</h4>
+        <h4 className="font-bold text-black">論理チェック & 結論</h4>
         {Object.entries({
           conclusion: "結論",
           reason: "理由",
@@ -1161,12 +1149,12 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
           meaning: "つまり",
         }).map(([k, label]) => (
           <div key={k} className="flex items-center gap-2">
-            <label className="w-16 text-white">{label}</label>
+            <label className="w-16 text-black">{label}</label>
             <input
               type="text"
               value={(data.logicCheck as any)[k]}
               onChange={(e) => updateNested("logicCheck", k, e.target.value)}
-              className="flex-1 rounded border border-white bg-[#121214] p-2 text-white"
+              className="flex-1 rounded border border-black bg-[#ffffff] p-2 text-black"
             />
           </div>
         ))}
@@ -1174,13 +1162,13 @@ export default function TrainingFrameworkForm({ data, onChange }: Props) {
           placeholder="一文の結論"
           value={data.oneSentence}
           onChange={(e) => updateRoot("oneSentence", e.target.value)}
-          className="mt-2 h-16 w-full resize-none rounded border border-white bg-[#121214] p-2 font-bold text-white"
+          className="mt-2 h-16 w-full resize-none rounded border border-black bg-[#ffffff] p-2 font-bold text-black"
         />
         <textarea
           placeholder="今日の発見"
           value={data.discovery}
           onChange={(e) => updateRoot("discovery", e.target.value)}
-          className="h-16 w-full resize-none rounded border border-white bg-[#121214] p-2 text-white"
+          className="h-16 w-full resize-none rounded border border-black bg-[#ffffff] p-2 text-black"
         />
       </div>
     </div>
