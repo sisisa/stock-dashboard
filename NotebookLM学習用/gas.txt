@@ -1,0 +1,80 @@
+function doPost(e) {
+  try {
+    // 1. Next.jsから送られてきたJSONデータをパース
+    const params = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
+    const action = params.action;
+
+    if (action === "add_stock") {
+      const now = new Date().toISOString();
+      const newId = Date.now();
+      
+      // 2. A〜K列の順序に合わせて配列データを作成
+      // Next.js側でJSON.stringifyされた文字列は、そのままテキストとしてセルに格納されます
+      const rowData = [
+        newId,                           // A: id
+        params.details || "",            // B: details
+        params.unknownWords || "[]",     // C: unknown_words
+        params.relatedLinks || "[]",     // D: related_links
+        params.ownWords || "",           // E: own_words
+        params.metaphor || "",           // F: metaphor
+        params.categories || "[]",       // G: categories
+        false,                           // H: isUsed (初期値はfalse)
+        "",                              // I: draftUrl
+        now,                             // J: createdAt
+        now,                              // K: updatedAt
+        params.technicalUnderstanding || "[]", // L: technicalUnderstanding
+        params.thinkingTraining || "[]", // M: thinkingTraining
+        params.activeMode || "[]" // N: activeMode
+      ];
+      
+      // 3. スプレッドシートの最終行に追記
+      sheet.appendRow(rowData);
+      
+      // 4. 成功レスポンスを返す
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: rowData }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // (※今後 update_stock などのアクションを追加する場合はここに追記します)
+
+  } catch (error) {
+    // エラー時のレスポンス（Next.js側でキャッチしてアラートを出します）
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// データの取得用 (右ペインの検索・確認画面用)
+function doGet(e) {
+  try {
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    if (data.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 1行目はヘッダー(A~K)なので、2行目からオブジェクトにマッピング
+    const formattedData = data.slice(1).map(row => ({
+      id: row,
+      details: row[8],
+      unknownWords: row[4],
+      relatedLinks: row[5],
+      ownWords: row[6],
+      metaphor: row[9],
+      categories: row[10],
+      isUsed: row[11],
+      draftUrl: row[12],
+      createdAt: row[13],
+      updatedAt: row[14]
+    }));
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: formattedData }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

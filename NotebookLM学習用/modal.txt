@@ -32,7 +32,7 @@ export default function IdeaDetailModal({
     if (idea && state.id !== idea.id) {
       console.log(setters);
       // 既にパース済みのデータを渡す（useSearch側でパースされている想定）
-      handlers.initializeForm(idea as unknown as ParsedStockIdea);
+      handlers.initializeForm(idea as any);
     }
   }, [idea, handlers]);
 

@@ -101,6 +101,7 @@ export type StockIdeaInput = Omit<
 export type ParsedStockIdea = StockIdea & {
   parsedTechnicalUnderstanding: TechnicalUnderstanding;
   parsedCategories: string[];
+  parsedThinkingTraining: ThinkingTraining;
   parsedUnknownWords: { word: string; result: string }[];
   parsedRelatedLinks: { memo: string; url: string; title: string }[];
 };

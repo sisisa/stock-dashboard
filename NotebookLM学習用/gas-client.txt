@@ -84,47 +84,70 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
   }
 }
 
-// データ追加 (POST)
-export async function addStockIdea(data: StockIdeaInput): Promise<boolean> {
+export async function createStockIdea(
+  data: Omit<
+    StockIdea,
+    "id" | "isUsed" | "draftUrl" | "createdAt" | "updatedAt"
+  >,
+): Promise<StockIdea | null> {
   const gasUrl = getGasUrl();
-  if (!gasUrl) return false;
+  if (!gasUrl) return null;
 
   try {
     const response = await fetch(gasUrl, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "add_stock", // ここで内部的に付与する [1]
+        action: "add_stock",
         ...data,
       }),
+      cache: "no-store",
     });
-    const result = await response.json();
-    return result.success === true;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const json = await response.json();
+    if (json.success) {
+      return json.data as StockIdea;
+    }
+    return null;
   } catch (error) {
-    console.error("Error adding stock:", error);
-    return false;
+    console.error("Error adding stock to GAS:", error);
+    return null;
   }
 }
 
-export async function updateStockIdea(
-  data: StockIdeaInput & { id: number }, // idは必須だがactionは含めない
-): Promise<boolean> {
+// データ追加 (POST)
+export async function addStockIdea(
+  data: StockIdeaInput,
+): Promise<StockIdea | null> {
   const gasUrl = getGasUrl();
-  if (!gasUrl) return false;
+  if (!gasUrl) return null;
 
   try {
     const response = await fetch(gasUrl, {
       method: "POST",
+      // CORS回避のため text/plain を使用
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "update_stock", // ここで内部的に付与する
-        ...data,
-      }),
+      redirect: "follow",
+      body: JSON.stringify({ action: "add_stock", ...data }),
+      cache: "no-store",
     });
-    const result = await response.json();
-    return result.success === true;
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // GAS側からのレスポンスをJSONとしてパース
+    const text = await response.text();
+    const json = JSON.parse(text);
+
+    if (json.success) {
+      return json.data as StockIdea;
+    }
+    return null;
   } catch (error) {
-    console.error("Error updating stock:", error);
-    return false;
+    console.error("Error adding stock to GAS:", error);
+    return null;
   }
 }
