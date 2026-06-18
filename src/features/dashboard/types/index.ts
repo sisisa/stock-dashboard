@@ -10,6 +10,27 @@ export interface TechnicalUnderstanding {
   difference: string;
 }
 
+export interface StructuringItem {
+  // 目的
+  Purpose: {
+    who: string; // 誰が
+    when: string; // いつ
+    whom: string; // 誰と
+    what: string; // 何をするために
+  };
+
+  // trigger: string;
+  // without: string;
+  // demerit: string;
+  // situation: string;
+  // difference: string;
+}
+
+// 構造化トレーニングの空データ
+export const defaultStructuringData: StructuringItem = {
+  Purpose: { who: "", when: "", whom: "", what: "" },
+};
+
 // 思考トレーニング用の型定義（テンプレートに完全準拠）
 export interface ThinkingTraining {
   theme: string;
@@ -55,6 +76,7 @@ export interface UnknownWord {
 export interface DraftData {
   details?: string;
   technicalUnderstanding?: TechnicalUnderstanding; // 追加
+  structuringItem?: StructuringItem;
   thinkingTraining: ThinkingTraining; // M列 (思考トレーニングモード) ※新規
   activeMode: string; // N列 ("understanding" or "training") ※新規
   unknownWords?: UnknownWord[];
@@ -79,6 +101,7 @@ export interface StockIdea {
   id: number;
   details: string;
   technicalUnderstanding: string; // L列 (理解モード)
+  structuringItem?: string;
   thinkingTraining: string; // M列 (思考トレーニングモード) ※新規
   activeMode: string; // N列 ("understanding" or "training") ※新規
   unknownWords: string; // JSON文字列
@@ -100,6 +123,7 @@ export type StockIdeaInput = Omit<
 
 export type ParsedStockIdea = StockIdea & {
   parsedTechnicalUnderstanding: TechnicalUnderstanding;
+  parsedStructuringItem: StructuringItem;
   parsedCategories: string[];
   parsedThinkingTraining: ThinkingTraining;
   parsedUnknownWords: { word: string; result: string }[];

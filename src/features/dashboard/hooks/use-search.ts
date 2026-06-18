@@ -4,6 +4,8 @@ import {
   ParsedStockIdea,
   TechnicalUnderstanding,
   ThinkingTraining,
+  StructuringItem,
+  defaultStructuringData,
 } from "../types";
 import { safeParse } from "../utils/parse";
 
@@ -33,6 +35,10 @@ export function useSearch() {
             idea.technicalUnderstanding,
             {} as TechnicalUnderstanding,
           ),
+          parsedStructuringItem: safeParse<StructuringItem>(
+            "",
+            defaultStructuringData,
+          ),
           parsedThinkingTraining: safeParse<ThinkingTraining>(
             idea.thinkingTraining,
             {} as ThinkingTraining,
@@ -46,6 +52,8 @@ export function useSearch() {
             { memo: string; url: string; title: string }[]
           >(idea.relatedLinks, []),
         }));
+
+        console.log("parsedIdeas", parsedIdeas);
         setIdeas(parsedIdeas);
       } catch (err) {
         setError("データの取得に失敗しました。");

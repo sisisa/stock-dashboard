@@ -3,12 +3,20 @@ import { addStockIdea, updateStockIdea } from "../api/gas-client";
 import {
   StockIdeaInput,
   TechnicalUnderstanding,
+  StructuringItem,
   ThinkingTraining,
   UnknownWord,
   LinkItem,
   DraftData,
   ParsedStockIdea,
+  defaultStructuringData,
 } from "../types";
+
+type StructuringSection = keyof StructuringItem;
+// "Purpose"
+
+type StructuringField<S extends StructuringSection> = keyof StructuringItem[S];
+// "who" | "when" | "whom" | "what"
 
 // 思考トレーニングの初期値テンプレート
 const defaultTrainingData: ThinkingTraining = {
@@ -50,6 +58,11 @@ export function useRegistration() {
       analogy: "",
       difference: "",
     });
+
+  const [structuringItem, setStructuringItem] = useState<StructuringItem>(
+    defaultStructuringData,
+  );
+
   const [thinkingTraining, setThinkingTraining] =
     useState<ThinkingTraining>(defaultTrainingData);
   const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
@@ -77,6 +90,15 @@ export function useRegistration() {
     setOwnWords(idea.ownWords || "");
     setMetaphor(idea.metaphor || "");
     setCategories(idea.parsedCategories);
+    setStructuringItem({
+      ...defaultStructuringData,
+      ...idea.parsedStructuringItem,
+      Purpose: {
+        ...defaultStructuringData.Purpose,
+        ...idea.parsedStructuringItem?.Purpose,
+      },
+    }); //構造化
+    console.log("parsedStructuringItem", idea.parsedStructuringItem);
   }, []);
 
   // 3. ストレージ（保存・呼び出し）ロジック
@@ -99,6 +121,9 @@ export function useRegistration() {
         if (parsed.ownWords) setOwnWords(parsed.ownWords);
         if (parsed.metaphor) setMetaphor(parsed.metaphor);
         if (parsed.categories) setCategories(parsed.categories);
+
+        // 構造化
+        if (parsed.structuringItem) setStructuringItem(parsed.structuringItem);
       } catch (error) {
         console.error("Failed to parse draft data", error);
       }
@@ -123,6 +148,23 @@ export function useRegistration() {
     const newData = { ...techUnderstanding, [field]: value };
     setTechUnderstanding(newData);
     saveToStorage({ technicalUnderstanding: newData });
+  };
+
+  const handleStructuringItemChange = <
+    S extends StructuringSection,
+    F extends keyof StructuringItem[S],
+  >(
+    section: S,
+    field: F,
+    value: string,
+  ) => {
+    setStructuringItem((prev) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
+    }));
   };
 
   const addUnknownWord = () => {
@@ -219,8 +261,10 @@ export function useRegistration() {
       let result;
       if (id) {
         // GAS側の更新アクション(例: update_stock)を呼び出す
+        console.log("updateStockIdea", payload);
         result = await updateStockIdea({ ...payload, id });
       } else {
+        console.log("id", id);
         result = await addStockIdea(payload);
       }
 
@@ -244,6 +288,7 @@ export function useRegistration() {
             analogy: "",
             difference: "",
           });
+          setStructuringItem(defaultStructuringData);
           setThinkingTraining(defaultTrainingData);
           alert("登録が完了しました");
         }
@@ -277,6 +322,7 @@ export function useRegistration() {
       isSubmitting,
       copiedIndex,
       activeTab,
+      structuringItem,
     },
     setters: {
       setDetails,
@@ -290,6 +336,7 @@ export function useRegistration() {
       setCategoryInput,
       setThinkingTraining,
       setActiveTab,
+      setStructuringItem,
     },
     handlers: {
       saveToStorage,
@@ -304,6 +351,7 @@ export function useRegistration() {
       handleRemoveLink,
       handleComplete,
       initializeForm,
+      handleStructuringItemChange,
     },
   };
 }

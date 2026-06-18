@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 import TechFrameworkForm from "./tech-framework-form";
 import TrainingFrameworkForm from "./training-framework-form";
+import StructuringForm from "./structuring-form";
 
 export default function IdeaDetailModal({
   idea,
@@ -198,9 +199,9 @@ export default function IdeaDetailModal({
 
           {/* 構造化 */}
           {state.activeTab === "structuring" && (
-            <TrainingFrameworkForm
-              data={state.thinkingTraining}
-              onChange={setters.setThinkingTraining}
+            <StructuringForm
+              data={state.structuringItem}
+              onChange={handlers.handleStructuringItemChange}
             />
           )}
         </div>

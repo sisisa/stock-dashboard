@@ -53,7 +53,7 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
   ];
 
   return (
-    <div className="flex flex-col gap-3 rounded border border-black/10 bg-[#ffffff] p-4">
+    <div className="flex flex-col gap-3 rounded border border-black bg-[#ffffff] p-4">
       <h3 className="font-bold text-black">理解フレームワーク（技術・概念）</h3>
       <p className="font-bold text-black">
         ※ 関連しない項目は空欄のままスキップしてください。
@@ -64,7 +64,7 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
             <label className={`text-xs font-bold ${color}`}>{label}</label>
             <input
               type="text"
-              value={data[key]}
+              // value={data[key]}
               onChange={(e) => onChange(key, e.target.value)}
               className="w-full rounded border border-black bg-[#ffffff] p-2 text-sm text-black focus:border-black focus:outline-none"
             />

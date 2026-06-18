@@ -21,62 +21,82 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
     const json = await response.json();
 
     if (json.success && Array.isArray(json.data)) {
-      return (
-        json.data
-          // 引数 item, index、および戻り値の型を明記し、暗黙の any (ts(7006)) を防止
-          .map((item: unknown, index: number): StockIdea | null => {
-            let row: unknown[] = [];
+      const result = json.data
+        .map((item: unknown, index: number): StockIdea | null => {
+          let row: unknown[] = [];
 
-            if (Array.isArray(item)) {
-              row = item;
-            } else if (
-              item !== null &&
-              typeof item === "object" &&
-              "id" in item &&
-              Array.isArray((item as Record<string, unknown>).id)
-            ) {
-              row = (item as Record<string, unknown>).id as unknown[];
-            } else {
-              return null; // 想定外のデータはスキップ
-            }
-
-            if (row.length === 0) return null;
-
-            // インデックス  で配列の1列目 (id) にアクセス
-            const rawId = row;
-
-            // typeof で string 型であることを確認してから比較し、型の重複エラー (ts(2367)) を回避
-            if (typeof rawId === "string" && rawId === "id") {
-              return null; // ヘッダー行を除外
-            }
-
-            const parsedId = typeof rawId === "number" ? rawId : Number(rawId);
-            const validId = Number.isNaN(parsedId)
-              ? Date.now() + index
-              : parsedId;
-
-            // スプレッドシートの列定義に従い、インデックス ([1], [2]...) を用いて各要素へアクセス
+          // 入力データの正規化 (配列直接、またはidプロパティに配列が入っているケースに対応)
+          if (Array.isArray(item)) {
+            row = item;
+          } else if (
+            item !== null &&
+            typeof item === "object" &&
+            "id" in item &&
+            Array.isArray((item as Record<string, unknown>).id)
+          ) {
+            row = (item as Record<string, unknown>).id as unknown[];
+          } else if (item !== null && typeof item === "object") {
+            // GAS修正後の「オブジェクト形式」を想定したフォールバック
+            const obj = item as any;
             return {
-              id: validId,
-              details: String(row[1] || ""),
-              unknownWords: String(row[2] || "[]"),
-              relatedLinks: String(row[3] || "[]"),
-              ownWords: String(row[4] || ""),
-              metaphor: String(row[5] || ""),
-              categories: String(row[6] || "[]"),
-              isUsed: Boolean(row[7] || false),
-              draftUrl: String(row[8] || ""),
-              createdAt: String(row[9] || ""),
-              updatedAt: String(row[10] || ""),
-              technicalUnderstanding: String(row[11] || ""),
-              thinkingTraining: String(row[12] || ""),
-              activeMode: String(row[13] || ""),
+              id: Number(obj.id),
+              details: String(obj.details || ""),
+              unknownWords: String(obj.unknownWords || "[]"),
+              relatedLinks: String(obj.relatedLinks || "[]"),
+              ownWords: String(obj.ownWords || ""),
+              metaphor: String(obj.metaphor || ""),
+              categories: String(obj.categories || "[]"),
+              isUsed: Boolean(obj.isUsed),
+              draftUrl: String(obj.draftUrl || ""),
+              createdAt: String(obj.createdAt || ""),
+              updatedAt: String(obj.updatedAt || ""),
+              technicalUnderstanding: String(
+                obj.technicalUnderstanding || "{}",
+              ),
+
+              thinkingTraining: String(obj.thinkingTraining || "{}"),
+              activeMode: String(obj.activeMode || "understanding"),
+              structuringItem: String(obj.structuringItem || "{}"),
             };
-          })
-          // フィルタリング関数の引数と Type Guard の型を明記し、安全に null を除外
-          .filter((idea: StockIdea | null): idea is StockIdea => idea !== null)
-      );
+          } else {
+            console.warn(`Item at index ${index} is invalid format:`, item);
+            return null;
+          }
+
+          if (row.length === 0) return null;
+
+          // 配列インデックスに基づいたマッピング
+          const rawId = row;
+          if (typeof rawId === "string" && rawId === "id") return null; // ヘッダー除外
+
+          const parsedId = typeof rawId === "number" ? rawId : Number(rawId);
+          const validId = Number.isNaN(parsedId)
+            ? Date.now() + index
+            : parsedId;
+
+          return {
+            id: validId,
+            details: String(row[3] || ""),
+            unknownWords: String(row[4] || "[]"),
+            relatedLinks: String(row[5] || "[]"),
+            ownWords: String(row[6] || ""),
+            metaphor: String(row[7] || ""),
+            categories: String(row[8] || "[]"),
+            isUsed: Boolean(row[9] || false),
+            draftUrl: String(row[10] || ""),
+            createdAt: String(row[11] || ""),
+            updatedAt: String(row[12] || ""),
+            technicalUnderstanding: String(row[13] || "{}"),
+            thinkingTraining: String(row[14] || "{}"),
+            activeMode: String(row[15] || "understanding"),
+            structuringItem: String(row[16] || "{}"),
+          };
+        })
+        .filter((idea: StockIdea | null): idea is StockIdea => idea !== null);
+
+      return result;
     }
+
     return [];
   } catch (error) {
     console.error("Error fetching ideas from GAS:", error);
@@ -94,11 +114,13 @@ export async function addStockIdea(data: StockIdeaInput): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        action: "add_stock", // ここで内部的に付与する [1]
+        action: "add_stock", // ここで内部的に付与する
         ...data,
       }),
     });
     const result = await response.json();
+
+    console.log("result", result);
     return result.success === true;
   } catch (error) {
     console.error("Error adding stock:", error);
@@ -112,6 +134,7 @@ export async function updateStockIdea(
   const gasUrl = getGasUrl();
   if (!gasUrl) return false;
 
+  console.log("data", data);
   try {
     const response = await fetch(gasUrl, {
       method: "POST",
@@ -122,6 +145,7 @@ export async function updateStockIdea(
       }),
     });
     const result = await response.json();
+    console.log("updateStockIdea", result);
     return result.success === true;
   } catch (error) {
     console.error("Error updating stock:", error);
