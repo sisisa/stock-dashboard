@@ -149,7 +149,7 @@ export default function IdeaDetailModal({
                   onClick={() => setters.setActiveTab(tab.id)}
                   className={cn(
                     "border-b-2 px-4 py-2 text-sm font-bold transition-all",
-                    state.activeMode === tab.id
+                    state.activeTab === tab.id
                       ? "border-black text-black"
                       : "border-transparent text-white hover:text-black",
                   )}
