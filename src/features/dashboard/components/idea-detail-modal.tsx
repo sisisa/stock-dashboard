@@ -4,15 +4,19 @@ import { useMemo, useEffect } from "react";
 import {
   ParsedStockIdea,
   TechnicalUnderstanding,
-  IdeaDetailModalProps,
   ThinkingTraining,
 } from "../types";
+
+import { FrameWorksTabs } from "../types/training";
+import { IdeaDetailModalProps } from "../types/component";
+
 import { cn } from "@/lib/utils";
 import { safeParse } from "../utils/parse";
 
 import { useRegistration } from "../hooks/use-registration";
 import { Button } from "@/components/ui/button";
 
+// 各フレームワーク呼び出し
 import TechFrameworkForm from "./tech-framework-form";
 import TrainingFrameworkForm from "./training-framework-form";
 import StructuringForm from "./structuring-form";
@@ -22,12 +26,6 @@ export default function IdeaDetailModal({
   onClose,
 }: IdeaDetailModalProps) {
   const { state, setters, handlers } = useRegistration();
-
-  const TABS = [
-    { id: "understanding", label: "理解フレームワーク" },
-    { id: "training", label: "思考トレーニング" },
-    { id: "structuring", label: "構造化トレーニング" },
-  ] as const;
 
   useEffect(() => {
     if (idea && state.id !== idea.id) {
@@ -145,7 +143,7 @@ export default function IdeaDetailModal({
 
             {/* タブUI: 規約に従い、下線を活用したシンプルなタブ */}
             <div className="flex gap-1">
-              {TABS.map((tab) => (
+              {FrameWorksTabs.map((tab) => (
                 <Button
                   key={tab.id}
                   onClick={() => setters.setActiveTab(tab.id)}
@@ -202,6 +200,7 @@ export default function IdeaDetailModal({
             <StructuringForm
               data={state.structuringItem}
               onChange={handlers.handleStructuringItemChange}
+              onPieceChange={handlers.handlePieceChange}
             />
           )}
         </div>

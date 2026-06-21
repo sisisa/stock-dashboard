@@ -91,11 +91,6 @@ export interface LinkItem {
   url: string;
   title: string;
 }
-export interface RelatedLink {
-  memo: string;
-  url: string;
-  title: string;
-}
 
 export interface StockIdea {
   id: number;
@@ -133,8 +128,4 @@ export type ParsedStockIdea = StockIdea & {
 export interface IdeaDetailModalProps {
   idea: StockIdea;
   onClose: () => void;
-}
-
-export interface StockFormProps {
-  onComplete: () => void;
 }

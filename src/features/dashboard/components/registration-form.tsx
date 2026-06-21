@@ -3,7 +3,12 @@
 import { Button } from "@/components/ui/button";
 import TechFrameworkForm from "./tech-framework-form";
 import TrainingFrameworkForm from "./training-framework-form";
+import StructuringForm from "./structuring-form";
+
 import { useRegistration } from "../hooks/use-registration"; // ← 新しく作ったフックを読み込む
+
+import { FrameWorksTabs } from "../types/training";
+import { cn } from "@/lib/utils";
 
 interface RegistrationFormProps {
   isRightPanelOpen?: boolean;
@@ -20,7 +25,7 @@ export default function RegistrationForm({
   return (
     <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-black bg-white p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">アイデア・メモの登録</h2>
+        <h2 className="text-xl font-bold text-black">アイデア・メモの登録</h2>
         {onToggleRightPanel && (
           <Button
             onClick={onToggleRightPanel}
@@ -34,25 +39,21 @@ export default function RegistrationForm({
       </div>
 
       {/* タブ切り替えUI */}
-      <div className="flex gap-2 border-b border-black/10 pb-2">
-        <button
-          onClick={() => {
-            setters.setActiveMode("understanding");
-            handlers.saveToStorage({ activeMode: "understanding" });
-          }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "understanding" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
-        >
-          理解モード（技術・概念）
-        </button>
-        <button
-          onClick={() => {
-            setters.setActiveMode("training");
-            handlers.saveToStorage({ activeMode: "training" });
-          }}
-          className={`rounded px-4 py-2 font-bold transition-colors ${state.activeMode === "training" ? "bg-primary text-white" : "bg-white text-black hover:bg-white"}`}
-        >
-          思考トレーニング
-        </button>
+      <div className="flex gap-2 border-b pb-2">
+        {FrameWorksTabs.map((tab) => (
+          <Button
+            key={tab.id}
+            onClick={() => setters.setActiveTab(tab.id)}
+            className={cn(
+              "border-b-2 px-4 py-2 font-bold transition-all",
+              state.activeTab === tab.id
+                ? "bg-primary border-black text-white"
+                : "border-black bg-white text-black hover:bg-white",
+            )}
+          >
+            {tab.label}
+          </Button>
+        ))}
       </div>
 
       {/* 詳細の記載 */}
@@ -69,26 +70,35 @@ export default function RegistrationForm({
         />
       </div>
 
-      {/* 動的フォームの出し分け */}
-      {state.activeMode === "understanding" ? (
+      {/* 各フレームワークの表示切り替え */}
+      {state.activeTab === "understanding" && (
         <TechFrameworkForm
           data={state.techUnderstanding}
           onChange={handlers.handleTechUnderstandingChange}
         />
-      ) : (
+      )}
+
+      {/* 思考トレーニング */}
+      {state.activeTab === "training" && (
         <TrainingFrameworkForm
           data={state.thinkingTraining}
-          onChange={(newData) => {
-            setters.setThinkingTraining(newData);
-            handlers.saveToStorage({ thinkingTraining: newData });
-          }}
+          onChange={setters.setThinkingTraining}
         />
       )}
 
-      {/* わからない単語と調査した結果 */}
+      {/* 構造化 */}
+      {state.activeTab === "structuring" && (
+        <StructuringForm
+          data={state.structuringItem}
+          onChange={handlers.handleStructuringItemChange}
+          onPieceChange={handlers.handlePieceChange}
+        />
+      )}
+
+      {/* 明確にわからない単語と調査した結果 */}
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-black">
-          わからない単語と調査した結果
+          明確にわからない単語と調査した結果
         </label>
         {state.unknownWords.map((item, index) => (
           <div key={index} className="flex gap-2">

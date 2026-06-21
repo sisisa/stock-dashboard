@@ -3,20 +3,18 @@ import { addStockIdea, updateStockIdea } from "../api/gas-client";
 import {
   StockIdeaInput,
   TechnicalUnderstanding,
-  StructuringItem,
   ThinkingTraining,
   UnknownWord,
   LinkItem,
   DraftData,
   ParsedStockIdea,
-  defaultStructuringData,
 } from "../types";
 
-type StructuringSection = keyof StructuringItem;
-// "Purpose"
+import type { StructuringItem } from "../types/training";
+import { defaultStructuringItem } from "../types/training";
 
-type StructuringField<S extends StructuringSection> = keyof StructuringItem[S];
-// "who" | "when" | "whom" | "what"
+type StructuringSection = keyof StructuringItem;
+// "Purpose" "Piece"
 
 // 思考トレーニングの初期値テンプレート
 const defaultTrainingData: ThinkingTraining = {
@@ -60,7 +58,7 @@ export function useRegistration() {
     });
 
   const [structuringItem, setStructuringItem] = useState<StructuringItem>(
-    defaultStructuringData,
+    defaultStructuringItem,
   );
 
   const [thinkingTraining, setThinkingTraining] =
@@ -91,10 +89,10 @@ export function useRegistration() {
     setMetaphor(idea.metaphor || "");
     setCategories(idea.parsedCategories);
     setStructuringItem({
-      ...defaultStructuringData,
+      ...defaultStructuringItem,
       ...idea.parsedStructuringItem,
       Purpose: {
-        ...defaultStructuringData.Purpose,
+        ...defaultStructuringItem.Purpose,
         ...idea.parsedStructuringItem?.Purpose,
       },
     }); //構造化
@@ -123,7 +121,7 @@ export function useRegistration() {
         if (parsed.categories) setCategories(parsed.categories);
 
         // 構造化
-        if (parsed.structuringItem) setStructuringItem(parsed.structuringItem);
+        // if (parsed.structuringItem) setStructuringItem(parsed.structuringItem);
       } catch (error) {
         console.error("Failed to parse draft data", error);
       }
@@ -165,6 +163,25 @@ export function useRegistration() {
         [field]: value,
       },
     }));
+  };
+
+  const handlePieceChange = (index: number, value: string) => {
+    setStructuringItem((prev) => {
+      const next = [...prev.Piece];
+
+      next[index] = value;
+
+      // 最後の入力欄に文字が入力されたら
+      // 空欄を1つ追加する
+      if (index === next.length - 1 && value.trim() !== "") {
+        next.push("");
+      }
+
+      return {
+        ...prev,
+        Piece: next,
+      };
+    });
   };
 
   const addUnknownWord = () => {
@@ -288,7 +305,7 @@ export function useRegistration() {
             analogy: "",
             difference: "",
           });
-          setStructuringItem(defaultStructuringData);
+          setStructuringItem(defaultStructuringItem);
           setThinkingTraining(defaultTrainingData);
           alert("登録が完了しました");
         }
@@ -352,6 +369,7 @@ export function useRegistration() {
       handleComplete,
       initializeForm,
       handleStructuringItemChange,
+      handlePieceChange,
     },
   };
 }
