@@ -165,7 +165,7 @@ export default function RegistrationForm({
               type="button"
               onClick={handlers.handleAddLink}
               disabled={!state.linkUrl.trim()}
-              className="rounded bg-blue-600 px-4 py-1.5 text-xs font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
+              className="rounded bg-blue-600 px-4 py-1.5 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
             >
               追加
             </button>
@@ -259,7 +259,7 @@ export default function RegistrationForm({
           <button
             onClick={() => handlers.addCategory(state.categoryInput)}
             disabled={!state.categoryInput.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-black hover:bg-blue-500 disabled:opacity-50"
+            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
             追加
           </button>
@@ -294,7 +294,7 @@ export default function RegistrationForm({
         <button
           onClick={handlers.handleComplete}
           disabled={state.isSubmitting || !state.details.trim()}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-black hover:bg-blue-500 disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
         >
           {state.isSubmitting ? "送信中..." : "完了"}
         </button>

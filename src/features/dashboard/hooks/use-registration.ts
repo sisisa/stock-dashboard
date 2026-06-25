@@ -1,3 +1,13 @@
+/**
+ * アイデア登録画面全体の状態管理を行うカスタムフック。
+ *
+ * 主な役割
+ * ・フォーム状態管理
+ * ・下書き保存(localStorage)
+ * ・既存データの読み込み
+ * ・入力補助処理
+ * ・登録／更新API実行
+ */
 import { useState, useEffect, useCallback } from "react";
 import { addStockIdea, updateStockIdea } from "../api/gas-client";
 import {
@@ -16,7 +26,13 @@ import { defaultStructuringItem } from "../types/training";
 type StructuringSection = keyof StructuringItem;
 // "Purpose" "Piece"
 
-// 思考トレーニングの初期値テンプレート
+/**
+ * 思考トレーニングモードの初期値
+ *
+ * 新規登録時や登録完了後に利用する。
+ * 「空の思考トレーニングシート」
+ * のテンプレートとして扱う。
+ */
 const defaultTrainingData: ThinkingTraining = {
   theme: "",
   issue: "",
@@ -40,10 +56,14 @@ export function useRegistration() {
   // 1. ステート管理
   const [id, setId] = useState<number | null>(null); // 更新用にIDを保持
   const [details, setDetails] = useState("");
+
+  // モード管理
   const [activeTab, setActiveTab] = useState("understanding");
   const [activeMode, setActiveMode] = useState<"understanding" | "training">(
     "understanding",
   );
+
+  // 理解モード
   const [techUnderstanding, setTechUnderstanding] =
     useState<TechnicalUnderstanding>({
       why: "",
@@ -57,10 +77,12 @@ export function useRegistration() {
       difference: "",
     });
 
+  // 構造化モード
   const [structuringItem, setStructuringItem] = useState<StructuringItem>(
     defaultStructuringItem,
   );
 
+  // 思考トレーニングモード
   const [thinkingTraining, setThinkingTraining] =
     useState<ThinkingTraining>(defaultTrainingData);
   const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
@@ -75,7 +97,7 @@ export function useRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // 2. 【新規】既存データをフォームにセットする関数
+  // 2. 既存データをフォームにセットする関数
   // useSearchですでにパース済みのデータ(ParsedStockIdea)を受け取るとスムーズです
   const initializeForm = useCallback((idea: ParsedStockIdea) => {
     setId(idea.id);
@@ -100,6 +122,11 @@ export function useRegistration() {
   }, []);
 
   // 3. ストレージ（保存・呼び出し）ロジック
+  /**
+   * 新規作成時のみ
+   * localStorageの下書きを復元する
+   * 編集モード(idあり)の場合はDBデータを優先するため実行しない。
+   */
   useEffect(() => {
     if (id) return;
 
@@ -165,6 +192,13 @@ export function useRegistration() {
     }));
   };
 
+  /**
+   * Piece更新処理
+   * Pieceは可変長配列として管理する。
+   * 最後の入力欄に文字が入力された場合、
+   * 自動的に空欄を1つ追加する。
+   * ユーザーは「追加ボタン」を意識せず入力だけに集中できる。
+   */
   const handlePieceChange = (index: number, value: string) => {
     setStructuringItem((prev) => {
       const next = [...prev.Piece];
@@ -270,6 +304,7 @@ export function useRegistration() {
       ownWords,
       metaphor,
       categories: JSON.stringify(categories),
+      structuringItem: JSON.stringify(structuringItem),
     };
 
     console.log("id", id);
