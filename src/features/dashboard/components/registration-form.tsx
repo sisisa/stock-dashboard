@@ -125,7 +125,7 @@ export default function RegistrationForm({
         <div className="flex justify-end">
           <Button
             onClick={handlers.addUnknownWord}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="rounded bg-blue-600 px-4 py-1.5 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
             追加
           </Button>
@@ -161,14 +161,13 @@ export default function RegistrationForm({
             className="w-full rounded border border-black bg-white/5 p-2 text-black focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
-            <button
-              type="button"
+            <Button
               onClick={handlers.handleAddLink}
               disabled={!state.linkUrl.trim()}
               className="rounded bg-blue-600 px-4 py-1.5 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
             >
               追加
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -194,8 +193,7 @@ export default function RegistrationForm({
                     )}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
                       onClick={() =>
                         handlers.handleCopySpecialFormat(link, index)
                       }
@@ -204,14 +202,13 @@ export default function RegistrationForm({
                       {state.copiedIndex === index
                         ? "コピー完了!"
                         : "特殊コピペ"}
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
                       onClick={() => handlers.handleRemoveLink(index)}
                       className="rounded text-black hover:text-red-400"
                     >
                       ✕
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </li>
@@ -256,13 +253,13 @@ export default function RegistrationForm({
             }
             className="flex-1 rounded border border-black bg-[#ffffff] p-2 text-black focus:outline-none"
           />
-          <button
+          <Button
             onClick={() => handlers.addCategory(state.categoryInput)}
             disabled={!state.categoryInput.trim()}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+            className="rounded bg-blue-600 px-4 py-1.5 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
           >
             追加
-          </button>
+          </Button>
         </div>
         {state.categories.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
@@ -272,7 +269,7 @@ export default function RegistrationForm({
                 className="flex items-center gap-1 rounded bg-blue-500/20 px-2 py-1 text-xs font-semibold text-black"
               >
                 {cat}
-                <button
+                <Button
                   onClick={() => {
                     const newCats = state.categories.filter(
                       (_, idx) => idx !== i,
@@ -280,10 +277,10 @@ export default function RegistrationForm({
                     setters.setCategories(newCats);
                     handlers.saveToStorage({ categories: newCats });
                   }}
-                  className="ml-1 text-black/50 hover:text-black"
+                  className="ml-1 text-white hover:text-black"
                 >
                   ✕
-                </button>
+                </Button>
               </span>
             ))}
           </div>
@@ -291,13 +288,13 @@ export default function RegistrationForm({
       </div>
 
       <div className="mt-4 flex justify-end">
-        <button
+        <Button
           onClick={handlers.handleComplete}
           disabled={state.isSubmitting || !state.details.trim()}
           className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
         >
           {state.isSubmitting ? "送信中..." : "完了"}
-        </button>
+        </Button>
       </div>
     </div>
   );

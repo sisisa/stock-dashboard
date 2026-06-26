@@ -73,3 +73,9 @@ export interface ParsedStockIdea extends StockIdea {
 
   parsedCategories: string[];
 }
+
+// 登録用に自動生成項目を除外した型
+export type StockIdeaInput = Omit<
+  StockIdea,
+  "id" | "isUsed" | "draftUrl" | "createdAt" | "updatedAt"
+>;

@@ -160,3 +160,30 @@ export interface ThinkingTraining {
 
   discovery: string;
 }
+
+/**
+ * 思考トレーニングモードの初期値
+ *
+ * 新規登録時や登録完了後に利用する。
+ * 「空の思考トレーニングシート」
+ * のテンプレートとして扱う。
+ */
+
+export const defaultTrainingData: ThinkingTraining = {
+  theme: "",
+  issue: "",
+  exclusion: "",
+  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
+  otherPerspective: { a: "", b: "", c: "", common: "" },
+  ownOpinion: { a: "", b: "", c: "", common: "" },
+  whySo: { question: "", answers: ["", "", "", "", ""] },
+  soWhat: { question: "", answers: ["", "", "", "", ""] },
+  goodLineLog: "",
+  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
+  concreteToAbstract: { concrete: "", abstract: "" },
+  abstractToConcrete: { concrete: "", abstract: "" },
+  analogy: { summary: "", analogy: "", reason: "" },
+  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
+  oneSentence: "",
+  discovery: "",
+};

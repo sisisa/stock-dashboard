@@ -10,47 +10,25 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { addStockIdea, updateStockIdea } from "../api/gas-client";
-import {
-  StockIdeaInput,
-  TechnicalUnderstanding,
+
+import type {
+  StructuringItem,
   ThinkingTraining,
-  UnknownWord,
-  LinkItem,
+  TechnicalUnderstanding,
+} from "../types/training";
+
+import { defaultStructuringItem, defaultTrainingData } from "../types/training";
+
+import type {
   DraftData,
   ParsedStockIdea,
-} from "../types";
+  StockIdeaInput,
+} from "../types/database";
 
-import type { StructuringItem } from "../types/training";
-import { defaultStructuringItem } from "../types/training";
+import type { UnknownWord, LinkItem } from "../types/common";
 
 type StructuringSection = keyof StructuringItem;
 // "Purpose" "Piece"
-
-/**
- * 思考トレーニングモードの初期値
- *
- * 新規登録時や登録完了後に利用する。
- * 「空の思考トレーニングシート」
- * のテンプレートとして扱う。
- */
-const defaultTrainingData: ThinkingTraining = {
-  theme: "",
-  issue: "",
-  exclusion: "",
-  fiveW1H: { when: "", where: "", what: "", who: "", why: "", how: "" },
-  otherPerspective: { a: "", b: "", c: "", common: "" },
-  ownOpinion: { op1: "", op2: "", op3: "", common: "" },
-  whySo: { question: "", answers: ["", "", "", "", ""] },
-  soWhat: { question: "", answers: ["", "", "", "", ""] },
-  goodLineLog: "",
-  commonalities: { targetA: "", targetB: "", points: [], structure: "" },
-  concreteToAbstract: { concrete: "", abstract: "" },
-  abstractToConcrete: { concrete: "", abstract: "" },
-  analogy: { summary: "", analogy: "", reason: "" },
-  logicCheck: { conclusion: "", reason: "", example: "", meaning: "" },
-  oneSentence: "",
-  discovery: "",
-};
 
 export function useRegistration() {
   // 1. ステート管理
@@ -148,7 +126,7 @@ export function useRegistration() {
         if (parsed.categories) setCategories(parsed.categories);
 
         // 構造化
-        // if (parsed.structuringItem) setStructuringItem(parsed.structuringItem);
+        if (parsed.structuringItem) setStructuringItem(parsed.structuringItem);
       } catch (error) {
         console.error("Failed to parse draft data", error);
       }
@@ -289,6 +267,35 @@ export function useRegistration() {
     saveToStorage({ links: newLinks });
   };
 
+  /**
+   登録フォームを初期状態へ戻す
+   新規登録完了後や「リセット」機能など、フォームを初期状態に戻したい場面で共通利用する。
+   初期値は training.ts に定義した default○○ を利用し、
+   初期化内容を一箇所で管理できるようにする。
+   */
+  const resetForm = () => {
+    setDetails("");
+
+    setUnknownWords([]);
+    setLinks([]);
+    setOwnWords("");
+    setMetaphor("");
+    setCategories([]);
+
+    setTechUnderstanding({
+      why: "",
+      problem: "",
+      mechanism: "",
+      trigger: "",
+      without: "",
+      demerit: "",
+      situation: "",
+      analogy: "",
+      difference: "",
+    });
+    setStructuringItem(defaultStructuringItem);
+    setThinkingTraining(defaultTrainingData);
+  };
   // 4. 送信処理（API通信）
   const handleComplete = async () => {
     if (!details.trim()) return;
@@ -307,8 +314,6 @@ export function useRegistration() {
       structuringItem: JSON.stringify(structuringItem),
     };
 
-    console.log("id", id);
-
     try {
       let result;
       if (id) {
@@ -323,25 +328,7 @@ export function useRegistration() {
       if (result) {
         if (!id) {
           localStorage.removeItem("draft_idea_stock");
-          setDetails("");
-          setUnknownWords([]);
-          setLinks([]);
-          setOwnWords("");
-          setMetaphor("");
-          setCategories([]);
-          setTechUnderstanding({
-            why: "",
-            problem: "",
-            mechanism: "",
-            trigger: "",
-            without: "",
-            demerit: "",
-            situation: "",
-            analogy: "",
-            difference: "",
-          });
-          setStructuringItem(defaultStructuringItem);
-          setThinkingTraining(defaultTrainingData);
+          resetForm();
           alert("登録が完了しました");
         }
         return true;

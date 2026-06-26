@@ -1,6 +1,6 @@
-import type { StockIdea } from "./database";
+import type { ParsedStockIdea } from "./database";
 
 export interface IdeaDetailModalProps {
-  idea: StockIdea;
+  idea: ParsedStockIdea;
   onClose: () => void;
 }

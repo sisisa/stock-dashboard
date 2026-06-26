@@ -1,6 +1,6 @@
 "use client";
 
-import { TechnicalUnderstanding } from "../types";
+import type { TechnicalUnderstanding } from "../types/training";
 
 interface Props {
   data: TechnicalUnderstanding;

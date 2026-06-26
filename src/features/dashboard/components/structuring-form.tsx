@@ -1,7 +1,6 @@
 "use client";
 
 import type { StructuringItem } from "../types/training";
-
 import { sections } from "../types/training";
 
 /**

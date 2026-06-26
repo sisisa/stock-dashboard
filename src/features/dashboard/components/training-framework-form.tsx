@@ -1,7 +1,6 @@
 "use client";
 
-import { ThinkingTraining } from "../types";
-
+import type { ThinkingTraining } from "../types/training";
 interface Props {
   data: ThinkingTraining;
   onChange: (newData: ThinkingTraining) => void;

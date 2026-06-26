@@ -1,11 +1,8 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
-import {
-  ParsedStockIdea,
-  TechnicalUnderstanding,
-  ThinkingTraining,
-} from "../types";
+
+import type { ParsedStockIdea } from "../types/database";
 
 import { FrameWorksTabs } from "../types/training";
 import { IdeaDetailModalProps } from "../types/component";
@@ -29,9 +26,8 @@ export default function IdeaDetailModal({
 
   useEffect(() => {
     if (idea && state.id !== idea.id) {
-      console.log(setters);
       // 既にパース済みのデータを渡す（useSearch側でパースされている想定）
-      handlers.initializeForm(idea as unknown as ParsedStockIdea);
+      handlers.initializeForm(idea);
     }
   }, [idea, handlers]);
 
@@ -42,45 +38,6 @@ export default function IdeaDetailModal({
       onClose();
       window.location.reload(); // 一覧への反映を確実にするため
     }
-  };
-
-  // モーダルの背景クリックで閉じる処理
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const techData = useMemo(
-    () =>
-      safeParse<TechnicalUnderstanding>(
-        idea.technicalUnderstanding,
-        {} as TechnicalUnderstanding,
-      ),
-    [idea.technicalUnderstanding],
-  );
-  const trainingData = useMemo(
-    () =>
-      safeParse<ThinkingTraining>(
-        idea.thinkingTraining,
-        {} as ThinkingTraining,
-      ),
-    [idea.thinkingTraining],
-  );
-
-  // 空欄の項目はレンダリングしないためのヘルパー関数
-  const renderField = (
-    label: string,
-    value: string | undefined,
-    colorClass: string = "text-black-400",
-  ) => {
-    if (!value || value.trim() === "") return null;
-    return (
-      <div className="mb-2 flex flex-col">
-        <span className={`font-bold ${colorClass}`}>{label}</span>
-        <span className="whitespace-pre-wrap text-black">{value}</span>
-      </div>
-    );
   };
 
   // 毎回レンダリング時にパースし直さないようメモ化

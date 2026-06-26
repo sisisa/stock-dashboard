@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { fetchStockIdeas } from "../api/gas-client";
-import {
-  ParsedStockIdea,
-  TechnicalUnderstanding,
-  ThinkingTraining,
+import { defaultStructuringItem } from "../types/training";
+import type { ParsedStockIdea } from "../types/database";
+
+import type {
   StructuringItem,
-  defaultStructuringData,
-} from "../types";
+  ThinkingTraining,
+  TechnicalUnderstanding,
+} from "../types/training";
+
 import { safeParse } from "../utils/parse";
 
 export function useSearch() {
@@ -37,7 +39,7 @@ export function useSearch() {
           ),
           parsedStructuringItem: safeParse<StructuringItem>(
             "",
-            defaultStructuringData,
+            defaultStructuringItem,
           ),
           parsedThinkingTraining: safeParse<ThinkingTraining>(
             idea.thinkingTraining,
