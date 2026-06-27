@@ -64,7 +64,7 @@ export default function TechFrameworkForm({ data, onChange }: Props) {
             <label className={`text-xs font-bold ${color}`}>{label}</label>
             <input
               type="text"
-              // value={data[key]}
+              value={data[key] ?? ""}
               onChange={(e) => onChange(key, e.target.value)}
               className="w-full rounded border border-black bg-[#ffffff] p-2 text-sm text-black focus:border-black focus:outline-none"
             />

@@ -18,6 +18,18 @@ export interface TechnicalUnderstanding {
   difference: string;
 }
 
+export const defaultTechnicalUnderstanding: TechnicalUnderstanding = {
+  why: "",
+  problem: "",
+  mechanism: "",
+  trigger: "",
+  without: "",
+  demerit: "",
+  situation: "",
+  analogy: "",
+  difference: "",
+};
+
 export interface StructuringItem {
   Purpose: Purpose;
   Piece: string[];
@@ -169,7 +181,7 @@ export interface ThinkingTraining {
  * のテンプレートとして扱う。
  */
 
-export const defaultTrainingData: ThinkingTraining = {
+export const defaultThinkingTrainingData: ThinkingTraining = {
   theme: "",
   issue: "",
   exclusion: "",

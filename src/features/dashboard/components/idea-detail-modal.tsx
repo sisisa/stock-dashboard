@@ -2,8 +2,6 @@
 
 import { useMemo, useEffect } from "react";
 
-import type { ParsedStockIdea } from "../types/database";
-
 import { FrameWorksTabs } from "../types/training";
 import { IdeaDetailModalProps } from "../types/component";
 
@@ -214,17 +212,24 @@ export default function IdeaDetailModal({
         {/* 自分の言葉で整理 */}
         <div className="flex flex-col gap-2">
           <h4 className="font-semibold text-black">自分の言葉で整理</h4>
-          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
-            {idea.ownWords || "未記載"}
-          </p>
+          <textarea
+            value={idea.ownWords || "未記載"}
+            onChange={(e) => setters.setDetails(e.target.value)}
+            className="w-full rounded border border-black p-3 font-bold text-black"
+          />
         </div>
 
         {/* たとえを考える */}
         <div className="flex flex-col gap-2">
           <h4 className="font-semibold text-black">たとえ</h4>
-          <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
+          <textarea
+            value={idea.metaphor || "未記載"}
+            onChange={(e) => setters.setDetails(e.target.value)}
+            className="w-full rounded border border-black p-3 font-bold text-black"
+          />
+          {/* <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
             {idea.metaphor || "未記載"}
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

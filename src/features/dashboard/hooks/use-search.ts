@@ -37,8 +37,10 @@ export function useSearch() {
             idea.technicalUnderstanding,
             {} as TechnicalUnderstanding,
           ),
-          parsedStructuringItem: safeParse<StructuringItem>(
-            "",
+          structuringItem: idea.structuringItem ?? "",
+
+          parsedStructuringItem: safeParse(
+            idea.structuringItem ?? "",
             defaultStructuringItem,
           ),
           parsedThinkingTraining: safeParse<ThinkingTraining>(

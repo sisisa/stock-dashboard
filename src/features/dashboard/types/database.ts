@@ -35,7 +35,7 @@ export interface StockIdea {
 
   technicalUnderstanding: string;
 
-  structuringItem?: string;
+  structuringItem: string;
 
   thinkingTraining: string;
 

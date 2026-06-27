@@ -17,7 +17,11 @@ import type {
   TechnicalUnderstanding,
 } from "../types/training";
 
-import { defaultStructuringItem, defaultTrainingData } from "../types/training";
+import {
+  defaultStructuringItem,
+  defaultThinkingTrainingData,
+  defaultTechnicalUnderstanding,
+} from "../types/training";
 
 import type {
   DraftData,
@@ -43,17 +47,7 @@ export function useRegistration() {
 
   // 理解モード
   const [techUnderstanding, setTechUnderstanding] =
-    useState<TechnicalUnderstanding>({
-      why: "",
-      problem: "",
-      mechanism: "",
-      trigger: "",
-      without: "",
-      demerit: "",
-      situation: "",
-      analogy: "",
-      difference: "",
-    });
+    useState<TechnicalUnderstanding>(defaultTechnicalUnderstanding);
 
   // 構造化モード
   const [structuringItem, setStructuringItem] = useState<StructuringItem>(
@@ -61,8 +55,9 @@ export function useRegistration() {
   );
 
   // 思考トレーニングモード
-  const [thinkingTraining, setThinkingTraining] =
-    useState<ThinkingTraining>(defaultTrainingData);
+  const [thinkingTraining, setThinkingTraining] = useState<ThinkingTraining>(
+    defaultThinkingTrainingData,
+  );
   const [unknownWords, setUnknownWords] = useState<UnknownWord[]>([]);
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [linkMemo, setLinkMemo] = useState("");
@@ -80,21 +75,86 @@ export function useRegistration() {
   const initializeForm = useCallback((idea: ParsedStockIdea) => {
     setId(idea.id);
     setDetails(idea.details);
+
     setActiveMode(idea.activeMode as "understanding" | "training");
-    setTechUnderstanding(idea.parsedTechnicalUnderstanding);
-    setThinkingTraining(idea.parsedThinkingTraining);
+    setTechUnderstanding({
+      ...defaultTechnicalUnderstanding,
+      ...idea.parsedTechnicalUnderstanding,
+    });
+    setThinkingTraining({
+      ...defaultThinkingTrainingData,
+
+      ...idea.parsedThinkingTraining,
+
+      fiveW1H: {
+        ...defaultThinkingTrainingData.fiveW1H,
+        ...idea.parsedThinkingTraining?.fiveW1H,
+      },
+
+      otherPerspective: {
+        ...defaultThinkingTrainingData.otherPerspective,
+        ...idea.parsedThinkingTraining?.otherPerspective,
+      },
+
+      ownOpinion: {
+        ...defaultThinkingTrainingData.ownOpinion,
+        ...idea.parsedThinkingTraining?.ownOpinion,
+      },
+
+      whySo: {
+        ...defaultThinkingTrainingData.whySo,
+        ...idea.parsedThinkingTraining?.whySo,
+      },
+
+      soWhat: {
+        ...defaultThinkingTrainingData.soWhat,
+        ...idea.parsedThinkingTraining?.soWhat,
+      },
+
+      commonalities: {
+        ...defaultThinkingTrainingData.commonalities,
+        ...idea.parsedThinkingTraining?.commonalities,
+      },
+
+      concreteToAbstract: {
+        ...defaultThinkingTrainingData.concreteToAbstract,
+        ...idea.parsedThinkingTraining?.concreteToAbstract,
+      },
+
+      abstractToConcrete: {
+        ...defaultThinkingTrainingData.abstractToConcrete,
+        ...idea.parsedThinkingTraining?.abstractToConcrete,
+      },
+
+      analogy: {
+        ...defaultThinkingTrainingData.analogy,
+        ...idea.parsedThinkingTraining?.analogy,
+      },
+
+      logicCheck: {
+        ...defaultThinkingTrainingData.logicCheck,
+        ...idea.parsedThinkingTraining?.logicCheck,
+      },
+    });
     setUnknownWords(idea.parsedUnknownWords);
     setLinks(idea.parsedRelatedLinks);
     setOwnWords(idea.ownWords || "");
     setMetaphor(idea.metaphor || "");
     setCategories(idea.parsedCategories);
+    console.log("parsedStructuringItem", idea.parsedStructuringItem);
     setStructuringItem({
       ...defaultStructuringItem,
       ...idea.parsedStructuringItem,
+
       Purpose: {
         ...defaultStructuringItem.Purpose,
-        ...idea.parsedStructuringItem?.Purpose,
+        ...idea.parsedStructuringItem.Purpose,
       },
+
+      Piece:
+        idea.parsedStructuringItem.Piece.length > 0
+          ? idea.parsedStructuringItem.Piece
+          : defaultStructuringItem.Piece,
     }); //構造化
     console.log("parsedStructuringItem", idea.parsedStructuringItem);
   }, []);
@@ -282,19 +342,9 @@ export function useRegistration() {
     setMetaphor("");
     setCategories([]);
 
-    setTechUnderstanding({
-      why: "",
-      problem: "",
-      mechanism: "",
-      trigger: "",
-      without: "",
-      demerit: "",
-      situation: "",
-      analogy: "",
-      difference: "",
-    });
+    setTechUnderstanding(defaultTechnicalUnderstanding);
     setStructuringItem(defaultStructuringItem);
-    setThinkingTraining(defaultTrainingData);
+    setThinkingTraining(defaultThinkingTrainingData);
   };
   // 4. 送信処理（API通信）
   const handleComplete = async () => {
