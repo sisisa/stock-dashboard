@@ -155,7 +155,7 @@ export default function IdeaDetailModal({
             <StructuringForm
               data={state.structuringItem}
               onChange={handlers.handleStructuringItemChange}
-              onPieceChange={handlers.handlePieceChange}
+              onArrayChange={handlers.handleArrayChange}
             />
           )}
         </div>
@@ -227,9 +227,6 @@ export default function IdeaDetailModal({
             onChange={(e) => setters.setDetails(e.target.value)}
             className="w-full rounded border border-black p-3 font-bold text-black"
           />
-          {/* <p className="rounded bg-white p-4 whitespace-pre-wrap text-black">
-            {idea.metaphor || "未記載"}
-          </p> */}
         </div>
       </div>
     </div>

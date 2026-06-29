@@ -6,6 +6,7 @@ export const FrameWorksTabs = [
   { id: "structuring", label: "構造化トレーニング" },
 ] as const;
 
+/*** 理解フレームワーク関連***/
 export interface TechnicalUnderstanding {
   why: string;
   problem: string;
@@ -30,9 +31,13 @@ export const defaultTechnicalUnderstanding: TechnicalUnderstanding = {
   difference: "",
 };
 
+/*** 構造化トレーニング関連***/
 export interface StructuringItem {
   Purpose: Purpose;
   Piece: string[];
+  Perspective: string[];
+  Pillar: string[];
+  Presentation: string[];
 }
 
 export interface Purpose {
@@ -59,16 +64,59 @@ export const defaultStructuringItem: StructuringItem = {
   },
 
   Piece: [""],
+
+  Perspective: [""],
+
+  Pillar: [""],
+
+  Presentation: [""],
+
+  // Perspective(視点) →書き出した断片をどのような視点で整理するかを考える ※この部分が一番難易度が高く、重要である
+  // Pillar(支柱) →上記の視点で決めた後、その構造をどのくらいの大きさの支柱で揃えるかを考える。
+  // Presentation(表現) →ここまで考えてきた内容をどのような構造で表現するかを決める
 };
 
-//StructuringSection から除外する値
-export type FixedSection = "Purpose";
+// 配列で管理する構造化セクション
+export type DynamicStructuringSection =
+  | "Piece"
+  | "Perspective"
+  | "Pillar"
+  | "Presentation";
 
-export const sections = [
+export interface FixedSection {
+  key: "Purpose";
+
+  title: string;
+
+  description: string;
+
+  type: "fixed";
+
+  fields: {
+    field: keyof Purpose;
+    label: string;
+  }[];
+}
+
+export interface DynamicSection {
+  key: DynamicStructuringSection;
+
+  title: string;
+
+  description: string;
+
+  type: "dynamic";
+
+  placeholder: string;
+}
+
+export type StructuringSection = FixedSection | DynamicSection;
+
+export const sections: StructuringSection[] = [
   {
     key: "Purpose",
     title: "Purpose",
-    description: "目的を整理する",
+    description: "対象となる問題の目的を整理する",
     type: "fixed",
 
     fields: [
@@ -94,11 +142,37 @@ export const sections = [
   {
     key: "Piece",
     title: "Piece",
-    description: "構造化のための断片を書き出す",
+    description: "構造化するための断片を書き出す",
     type: "dynamic",
+    placeholder: "断片を書き出す",
+  },
+
+  {
+    key: "Perspective",
+    title: "Perspective",
+    description: "どの視点で整理すると分かりやすいかを書く",
+    type: "dynamic",
+    placeholder: "例：時間・場所・人物・原因・結果",
+  },
+
+  {
+    key: "Pillar",
+    title: "Pillar",
+    description: "Perspectiveで決めた視点を、どの粒度で揃えるかを書く",
+    type: "dynamic",
+    placeholder: "例：3分類・5分類・大中小",
+  },
+
+  {
+    key: "Presentation",
+    title: "Presentation",
+    description: "最終的にどの構造で表現するかを書く",
+    type: "dynamic",
+    placeholder: "例：表・ツリー・マインドマップ",
   },
 ] as const;
 
+/*** 思考トレーニング(言語化トレーニング)関連***/
 export interface FiveW1H {
   when: string;
   where: string;

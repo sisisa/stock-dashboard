@@ -15,6 +15,7 @@ import type {
   StructuringItem,
   ThinkingTraining,
   TechnicalUnderstanding,
+  DynamicStructuringSection,
 } from "../types/training";
 
 import {
@@ -155,8 +156,22 @@ export function useRegistration() {
         idea.parsedStructuringItem.Piece.length > 0
           ? idea.parsedStructuringItem.Piece
           : defaultStructuringItem.Piece,
+
+      Perspective:
+        idea.parsedStructuringItem.Perspective.length > 0
+          ? idea.parsedStructuringItem.Perspective
+          : defaultStructuringItem.Perspective,
+
+      Pillar:
+        idea.parsedStructuringItem.Pillar.length > 0
+          ? idea.parsedStructuringItem.Pillar
+          : defaultStructuringItem.Pillar,
+
+      Presentation:
+        idea.parsedStructuringItem.Presentation.length > 0
+          ? idea.parsedStructuringItem.Presentation
+          : defaultStructuringItem.Presentation,
     }); //構造化
-    console.log("parsedStructuringItem", idea.parsedStructuringItem);
   }, []);
 
   // 3. ストレージ（保存・呼び出し）ロジック
@@ -230,28 +245,25 @@ export function useRegistration() {
     }));
   };
 
-  /**
-   * Piece更新処理
-   * Pieceは可変長配列として管理する。
-   * 最後の入力欄に文字が入力された場合、
-   * 自動的に空欄を1つ追加する。
-   * ユーザーは「追加ボタン」を意識せず入力だけに集中できる。
-   */
-  const handlePieceChange = (index: number, value: string) => {
+  const handleArrayChange = (
+    section: DynamicStructuringSection,
+    index: number,
+    value: string,
+  ) => {
     setStructuringItem((prev) => {
-      const next = [...prev.Piece];
+      const items = [...prev[section]];
 
-      next[index] = value;
+      // 入力内容を更新
+      items[index] = value;
 
-      // 最後の入力欄に文字が入力されたら
-      // 空欄を1つ追加する
-      if (index === next.length - 1 && value.trim() !== "") {
-        next.push("");
+      // 一番最後に入力されたら空欄を追加
+      if (index === items.length - 1 && value.trim() !== "") {
+        items.push("");
       }
 
       return {
         ...prev,
-        Piece: next,
+        [section]: items,
       };
     });
   };
@@ -346,6 +358,7 @@ export function useRegistration() {
     setStructuringItem(defaultStructuringItem);
     setThinkingTraining(defaultThinkingTrainingData);
   };
+
   // 4. 送信処理（API通信）
   const handleComplete = async () => {
     if (!details.trim()) return;
@@ -441,7 +454,7 @@ export function useRegistration() {
       handleComplete,
       initializeForm,
       handleStructuringItemChange,
-      handlePieceChange,
+      handleArrayChange,
     },
   };
 }

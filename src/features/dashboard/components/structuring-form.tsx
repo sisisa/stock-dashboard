@@ -1,6 +1,9 @@
 "use client";
 
-import type { StructuringItem } from "../types/training";
+import type {
+  StructuringItem,
+  DynamicStructuringSection,
+} from "../types/training";
 import { sections } from "../types/training";
 
 /**
@@ -9,7 +12,7 @@ import { sections } from "../types/training";
  * data
  *   入力済みのデータ
  *
- * onChange
+ * onArrayChange
  *   入力が変更された時に親へ通知する関数
  */
 interface Props {
@@ -24,13 +27,17 @@ interface Props {
     value: string,
   ) => void;
 
-  onPieceChange: (index: number, value: string) => void;
+  onArrayChange: (
+    section: DynamicStructuringSection,
+    index: number,
+    value: string,
+  ) => void;
 }
 
 export default function StructuringForm({
   data,
   onChange,
-  onPieceChange,
+  onArrayChange,
 }: Props) {
   return (
     <div className="flex flex-col gap-6">
@@ -70,11 +77,14 @@ export default function StructuringForm({
 
             {section.type === "dynamic" && (
               <div className="flex flex-col gap-2">
-                {data.Piece.map((piece, index) => (
+                {data[section.key].map((item, index) => (
                   <input
                     key={index}
-                    value={piece}
-                    onChange={(e) => onPieceChange(index, e.target.value)}
+                    value={item}
+                    placeholder={section.placeholder}
+                    onChange={(e) =>
+                      onArrayChange(section.key, index, e.target.value)
+                    }
                     className="rounded border border-black px-2 py-1 font-bold text-black"
                   />
                 ))}

@@ -91,7 +91,7 @@ export default function RegistrationForm({
         <StructuringForm
           data={state.structuringItem}
           onChange={handlers.handleStructuringItemChange}
-          onPieceChange={handlers.handlePieceChange}
+          onArrayChange={handlers.handleArrayChange}
         />
       )}
 
