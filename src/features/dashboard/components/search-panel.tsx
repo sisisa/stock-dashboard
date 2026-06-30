@@ -6,16 +6,21 @@ import { Button } from "@/components/ui/button";
 import IdeaDetailModal from "./idea-detail-modal";
 import { useSearch } from "../hooks/use-search";
 
+import { useMarkdown } from "../hooks/use-markdown";
+
 export default function SearchPanel() {
   // すべてのロジックをカスタムフックから呼び出す
   const { state, setters, handlers } = useSearch();
+
+  // state.filteredIdeas(検索で絞り込んだデータを対象にしてマークダウンを出力)
+  const { handleDownloadMarkdown } = useMarkdown(state.filteredIdeas);
 
   return (
     <div className="relative flex h-full flex-col gap-4 rounded-xl border border-black/10 bg-white/5 p-5">
       <div className="flex gap-4 border-black">
         <h1 className="text-xl font-bold text-black">確認・検索</h1>
         <Button
-          onClick={handlers.handleDownloadMarkdown}
+          onClick={handleDownloadMarkdown}
           className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
         >
           マークダウンダウンロード

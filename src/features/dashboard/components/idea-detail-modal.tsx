@@ -198,9 +198,7 @@ export default function IdeaDetailModal({
                   >
                     {link.title || link.url}
                   </a>
-                  {link.memo && (
-                    <p className="text-xs text-black">{link.memo}</p>
-                  )}
+                  {link.memo && <p className="text-black">{link.memo}</p>}
                 </li>
               ))}
             </ul>

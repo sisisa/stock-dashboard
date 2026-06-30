@@ -152,25 +152,21 @@ export function useRegistration() {
         ...idea.parsedStructuringItem.Purpose,
       },
 
-      Piece:
-        idea.parsedStructuringItem.Piece.length > 0
-          ? idea.parsedStructuringItem.Piece
-          : defaultStructuringItem.Piece,
+      Piece: idea.parsedStructuringItem?.Piece?.length
+        ? idea.parsedStructuringItem.Piece
+        : defaultStructuringItem.Piece,
 
-      Perspective:
-        idea.parsedStructuringItem.Perspective.length > 0
-          ? idea.parsedStructuringItem.Perspective
-          : defaultStructuringItem.Perspective,
+      Perspective: idea.parsedStructuringItem?.Perspective?.length
+        ? idea.parsedStructuringItem.Perspective
+        : defaultStructuringItem.Perspective,
 
-      Pillar:
-        idea.parsedStructuringItem.Pillar.length > 0
-          ? idea.parsedStructuringItem.Pillar
-          : defaultStructuringItem.Pillar,
+      Pillar: idea.parsedStructuringItem?.Pillar?.length
+        ? idea.parsedStructuringItem.Pillar
+        : defaultStructuringItem.Pillar,
 
-      Presentation:
-        idea.parsedStructuringItem.Presentation.length > 0
-          ? idea.parsedStructuringItem.Presentation
-          : defaultStructuringItem.Presentation,
+      Presentation: idea.parsedStructuringItem?.Presentation?.length
+        ? idea.parsedStructuringItem.Presentation
+        : defaultStructuringItem.Presentation,
     }); //構造化
   }, []);
 
