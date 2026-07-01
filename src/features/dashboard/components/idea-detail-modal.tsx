@@ -11,6 +11,9 @@ import { safeParse } from "../utils/parse";
 import { useRegistration } from "../hooks/use-registration";
 import { Button } from "@/components/ui/button";
 
+import type { ActiveMode } from "../types/common";
+import { activeModes } from "../types/common";
+
 // 各フレームワーク呼び出し
 import TechFrameworkForm from "./tech-framework-form";
 import TrainingFrameworkForm from "./training-framework-form";
@@ -80,6 +83,26 @@ export default function IdeaDetailModal({
               >
                 更新
               </Button>
+            </div>
+
+            <div className="flex gap-1">
+              <span className="font-bold text-black">
+                フレームワーク(メイン)
+              </span>
+
+              <select
+                value={state.activeMode}
+                onChange={(e) =>
+                  setters.setActiveMode(e.target.value as ActiveMode)
+                }
+                className="w-40 rounded border border-black px-2 py-1 font-bold text-black"
+              >
+                {activeModes.map((mode) => (
+                  <option key={mode.value} value={mode.value}>
+                    {mode.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* カテゴリ表示 */}

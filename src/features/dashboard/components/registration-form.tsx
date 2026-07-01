@@ -8,6 +8,10 @@ import StructuringForm from "./structuring-form";
 import { useRegistration } from "../hooks/use-registration"; // ← 新しく作ったフックを読み込む
 
 import { FrameWorksTabs } from "../types/training";
+
+import type { ActiveMode } from "../types/common";
+import { activeModes } from "../types/common";
+
 import { cn } from "@/lib/utils";
 
 interface RegistrationFormProps {
@@ -25,7 +29,9 @@ export default function RegistrationForm({
   return (
     <div className="custom-scrollbar flex h-full flex-col gap-5 overflow-y-auto rounded-xl border border-black bg-white p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-black">アイデア・メモの登録</h2>
+        <h2 className="text text-black-black text-xl font-bold">
+          アイデア・メモの登録
+        </h2>
         {onToggleRightPanel && (
           <Button
             onClick={onToggleRightPanel}
@@ -38,6 +44,22 @@ export default function RegistrationForm({
         )}
       </div>
 
+      <div className="flex gap-1">
+        <span className="font-bold text-black">フレームワーク(メイン)</span>
+
+        <select
+          value={state.activeMode}
+          onChange={(e) => setters.setActiveMode(e.target.value as ActiveMode)}
+          className="w-40 rounded border border-black px-2 py-1 font-bold text-black"
+        >
+          {activeModes.map((mode) => (
+            <option key={mode.value} value={mode.value}>
+              {mode.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* タブ切り替えUI */}
       <div className="flex gap-2 border-b pb-2">
         {FrameWorksTabs.map((tab) => (
@@ -45,7 +67,7 @@ export default function RegistrationForm({
             key={tab.id}
             onClick={() => setters.setActiveTab(tab.id)}
             className={cn(
-              "border-b-2 px-4 py-2 font-bold transition-all",
+              "text-black-all border-b-2 px-4 py-2 font-bold transition",
               state.activeTab === tab.id
                 ? "bg-primary border-black text-white"
                 : "border-black bg-white text-black hover:bg-white",
@@ -184,7 +206,7 @@ export default function RegistrationForm({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-black-400 truncate font-bold hover:underline"
+                      className="text-black-400 hover text-black:underline truncate font-bold"
                     >
                       {link.title || link.url}
                     </a>
@@ -291,7 +313,7 @@ export default function RegistrationForm({
         <Button
           onClick={handlers.handleComplete}
           disabled={state.isSubmitting || !state.details.trim()}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
+          className="text text-black-white rounded-lg bg-blue-600 px-6 py-2 font-bold hover:bg-blue-500 disabled:opacity-50"
         >
           {state.isSubmitting ? "送信中..." : "完了"}
         </Button>

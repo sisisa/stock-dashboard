@@ -4,7 +4,7 @@ import type {
   ThinkingTraining,
 } from "./training";
 
-import type { UnknownWord, LinkItem } from "./common";
+import type { UnknownWord, LinkItem, ActiveMode } from "./common";
 
 export interface DraftData {
   details?: string;
@@ -15,7 +15,7 @@ export interface DraftData {
 
   thinkingTraining: ThinkingTraining;
 
-  activeMode: string;
+  activeMode: ActiveMode;
 
   unknownWords?: UnknownWord[];
 
@@ -39,7 +39,7 @@ export interface StockIdea {
 
   thinkingTraining: string;
 
-  activeMode: string;
+  activeMode: ActiveMode;
 
   unknownWords: string;
 

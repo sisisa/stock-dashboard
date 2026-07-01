@@ -1,4 +1,7 @@
-import { StockIdea, StockIdeaInput } from "../types";
+// import { StockIdea, StockIdeaInput } from "../types";
+
+import type { ActiveMode } from "../types/common";
+import type { StockIdea, StockIdeaInput } from "../types/database";
 
 function getGasUrl(): string {
   const url = process.env.NEXT_PUBLIC_GAS_WEB_APP_URL;
@@ -55,7 +58,7 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
               ),
 
               thinkingTraining: String(obj.thinkingTraining || "{}"),
-              activeMode: String(obj.activeMode || "understanding"),
+              activeMode: (obj.activeMode || "understanding") as ActiveMode,
               structuringItem: String(obj.structuringItem || "{}"),
             };
           } else {
@@ -88,7 +91,7 @@ export async function fetchStockIdeas(): Promise<StockIdea[]> {
             updatedAt: String(row[12] || ""),
             technicalUnderstanding: String(row[13] || "{}"),
             thinkingTraining: String(row[14] || "{}"),
-            activeMode: String(row[15] || "understanding"),
+            activeMode: (row[15] || "understanding") as ActiveMode,
             structuringItem: String(row[16] || "{}"),
           };
         })

@@ -30,7 +30,7 @@ import type {
   StockIdeaInput,
 } from "../types/database";
 
-import type { UnknownWord, LinkItem } from "../types/common";
+import type { UnknownWord, LinkItem, ActiveMode } from "../types/common";
 
 type StructuringSection = keyof StructuringItem;
 // "Purpose" "Piece"
@@ -41,10 +41,10 @@ export function useRegistration() {
   const [details, setDetails] = useState("");
 
   // モード管理
-  const [activeTab, setActiveTab] = useState("understanding");
-  const [activeMode, setActiveMode] = useState<"understanding" | "training">(
-    "understanding",
-  );
+  const [activeTab, setActiveTab] = useState<ActiveMode>("understanding");
+
+  // どのフレームワークをメインとするかの値
+  const [activeMode, setActiveMode] = useState<ActiveMode>("understanding");
 
   // 理解モード
   const [techUnderstanding, setTechUnderstanding] =
@@ -77,7 +77,7 @@ export function useRegistration() {
     setId(idea.id);
     setDetails(idea.details);
 
-    setActiveMode(idea.activeMode as "understanding" | "training");
+    setActiveMode(idea.activeMode as ActiveMode);
     setTechUnderstanding({
       ...defaultTechnicalUnderstanding,
       ...idea.parsedTechnicalUnderstanding,
@@ -184,8 +184,9 @@ export function useRegistration() {
       try {
         const parsed = JSON.parse(savedData) as DraftData;
         if (parsed.details) setDetails(parsed.details);
-        if (parsed.activeMode)
-          setActiveMode(parsed.activeMode as "understanding" | "training");
+
+        if (parsed.activeMode) setActiveMode(parsed.activeMode as ActiveMode);
+
         if (parsed.technicalUnderstanding)
           setTechUnderstanding(parsed.technicalUnderstanding);
         if (parsed.thinkingTraining)
@@ -350,6 +351,8 @@ export function useRegistration() {
     setMetaphor("");
     setCategories([]);
 
+    setActiveMode("understanding");
+
     setTechUnderstanding(defaultTechnicalUnderstanding);
     setStructuringItem(defaultStructuringItem);
     setThinkingTraining(defaultThinkingTrainingData);
@@ -364,7 +367,7 @@ export function useRegistration() {
       details,
       technicalUnderstanding: JSON.stringify(techUnderstanding),
       thinkingTraining: JSON.stringify(thinkingTraining),
-      activeMode: activeTab,
+      activeMode: activeMode,
       unknownWords: JSON.stringify(unknownWords),
       relatedLinks: JSON.stringify(links),
       ownWords,

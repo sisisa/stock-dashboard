@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import IdeaDetailModal from "./idea-detail-modal";
 import { useSearch } from "../hooks/use-search";
 
+import type { ActiveMode } from "../types/common";
+import { activeModes } from "../types/common";
+
 import { useMarkdown } from "../hooks/use-markdown";
 
 export default function SearchPanel() {
   // すべてのロジックをカスタムフックから呼び出す
-  const { state, setters, handlers } = useSearch();
+  const { state, setters } = useSearch();
 
   // state.filteredIdeas(検索で絞り込んだデータを対象にしてマークダウンを出力)
   const { handleDownloadMarkdown } = useMarkdown(state.filteredIdeas);
@@ -55,6 +58,24 @@ export default function SearchPanel() {
               placeholder="終了日"
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <select
+            value={state.selectedMode}
+            onChange={(e) =>
+              setters.setSelectedMode(e.target.value as ActiveMode | "")
+            }
+            className="w-40 rounded border border-black px-2 py-1 font-bold text-black"
+          >
+            <option value="">全て</option>
+
+            {activeModes.map((mode) => (
+              <option key={mode.value} value={mode.value}>
+                {mode.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
