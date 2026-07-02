@@ -146,7 +146,7 @@ export default function IdeaDetailModal({
         </div>
 
         {/* コンテンツ部分 */}
-        <div className="flex flex-col gap-6 text-sm text-black">
+        <div className="flex flex-col gap-6 text-black">
           {/* 詳細の記載 */}
           <div className="flex flex-col gap-2">
             <label className="font-bold">詳細内容</label>
@@ -234,8 +234,8 @@ export default function IdeaDetailModal({
         <div className="flex flex-col gap-2">
           <h4 className="font-semibold text-black">自分の言葉で整理</h4>
           <textarea
-            value={idea.ownWords || "未記載"}
-            onChange={(e) => setters.setDetails(e.target.value)}
+            value={state.ownWords || "未記載"}
+            onChange={(e) => setters.setOwnWords(e.target.value)}
             className="w-full rounded border border-black p-3 font-bold text-black"
           />
         </div>
@@ -244,8 +244,8 @@ export default function IdeaDetailModal({
         <div className="flex flex-col gap-2">
           <h4 className="font-semibold text-black">たとえ</h4>
           <textarea
-            value={idea.metaphor || "未記載"}
-            onChange={(e) => setters.setDetails(e.target.value)}
+            value={state.metaphor || "未記載"}
+            onChange={(e) => setters.setMetaphor(e.target.value)}
             className="w-full rounded border border-black p-3 font-bold text-black"
           />
         </div>
